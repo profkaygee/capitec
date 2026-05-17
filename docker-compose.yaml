@@ -1,43 +1,63 @@
 ﻿services:
-  capitecfraud.worker:
-    image: capitecfraud.worker
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fraud-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Strong@Passw0rd123"
+    ports:
+      - "1433:1433"
+    networks:
+      - fraud-net
+
+  redis:
+    image: redis:7
+    container_name: fraud-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - fraud-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: fraud-rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - fraud-net
+
+  api:
     build:
       context: .
-      dockerfile: CapitecFraud.Worker/Dockerfile
+      dockerfile: src/CapitecFraudEngine/CapitecFraud.Api/Dockerfile
+    container_name: capitec-fraud-api
+    depends_on:
+      - sqlserver
+      - redis
+      - rabbitmq
+    ports:
+      - "5001:8080"
+    environment:
+      ConnectionStrings__FraudDb: "Server=sqlserver,1433;Database=CapitecFraudDb;User Id=sa;Password=YourStrong@Passw0rd123;TrustServerCertificate=True"
+    networks:
+      - fraud-net
 
-  capitecfraud.api:
-    image: capitecfraud.api
+  worker:
     build:
       context: .
-      dockerfile: CapitecFraud.Api/Dockerfile
+      dockerfile: src/CapitecFraudEngine/CapitecFraud.Worker/Dockerfile
+    container_name: capitec-fraud-worker
+    depends_on:
+      - sqlserver
+      - redis
+      - rabbitmq
+    environment:
+      ConnectionStrings__FraudDb: "Server=sqlserver,1433;Database=CapitecFraudDb;User Id=sa;Password=YourStrong@Passw0rd123;TrustServerCertificate=True"
+    networks:
+      - fraud-net
 
-  capitecfraud.application:
-    image: capitecfraud.application
-    build:
-      context: .
-      dockerfile: CapitecFraud.Application/Dockerfile
-
-  capitecfraud.domain:
-    image: capitecfraud.domain
-    build:
-      context: .
-      dockerfile: CapitecFraud.Domain/Dockerfile
-
-  capitecfraud.infrastructure:
-    image: capitecfraud.infrastructure
-    build:
-      context: .
-      dockerfile: CapitecFraud.Infrastructure/Dockerfile
-
-  capitecfraud.tests:
-    image: capitecfraud.tests
-    build:
-      context: .
-      dockerfile: ../../tests/CapitecFraudEngine.Tests/CapitecFraud.Tests/Dockerfile
-
-  capitecfraud.worker-1:
-    image: capitecfraud.worker-1
-    build:
-      context: .
-      dockerfile: CapitecFraud.Worker/Dockerfile
-
+networks:
+  fraud-net:
+    driver: bridge

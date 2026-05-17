@@ -59,7 +59,7 @@ public class FraudEngine
         };
     }
 
-    private object? GetFieldValue(Transaction txn, string field)
+    private object GetFieldValue(Transaction txn, string field)
     {
         return Map.TryGetValue(field, out var getter)
             ? getter(txn)
