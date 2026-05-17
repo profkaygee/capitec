@@ -1,0 +1,43 @@
+﻿services:
+  capitecfraud.worker:
+    image: capitecfraud.worker
+    build:
+      context: .
+      dockerfile: CapitecFraud.Worker/Dockerfile
+
+  capitecfraud.api:
+    image: capitecfraud.api
+    build:
+      context: .
+      dockerfile: CapitecFraud.Api/Dockerfile
+
+  capitecfraud.application:
+    image: capitecfraud.application
+    build:
+      context: .
+      dockerfile: CapitecFraud.Application/Dockerfile
+
+  capitecfraud.domain:
+    image: capitecfraud.domain
+    build:
+      context: .
+      dockerfile: CapitecFraud.Domain/Dockerfile
+
+  capitecfraud.infrastructure:
+    image: capitecfraud.infrastructure
+    build:
+      context: .
+      dockerfile: CapitecFraud.Infrastructure/Dockerfile
+
+  capitecfraud.tests:
+    image: capitecfraud.tests
+    build:
+      context: .
+      dockerfile: ../../tests/CapitecFraudEngine.Tests/CapitecFraud.Tests/Dockerfile
+
+  capitecfraud.worker-1:
+    image: capitecfraud.worker-1
+    build:
+      context: .
+      dockerfile: CapitecFraud.Worker/Dockerfile
+
