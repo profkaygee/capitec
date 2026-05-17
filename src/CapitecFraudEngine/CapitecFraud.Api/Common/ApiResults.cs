@@ -16,6 +16,12 @@ public static class ApiResults
             statusCode: StatusCodes.Status201Created
         );
 
+    public static IResult Accepted<T>(T data, string message = null) =>
+        Results.Json(
+            ApiResponse<T>.SuccessResponse(data, 202, message),
+            statusCode: StatusCodes.Status202Accepted
+        );
+
     public static IResult BadRequest(string message) =>
         Results.Json(
             ApiResponse<string>.ErrorResponse(message, 400),

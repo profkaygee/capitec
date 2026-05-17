@@ -3,10 +3,12 @@ using CapitecFraud.Api.Hubs;
 using CapitecFraud.Api.Middleware;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Common.Responses;
+using CapitecFraud.Infrastructure.Messaging;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using RabbitMQ.Client;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -62,7 +64,22 @@ public class Program
                 builder.Configuration.GetConnectionString("CapitecFraudDb")));
         
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+        builder.Services.AddEndpointsApiExplorer();
+
         builder.Services.AddOpenApi();
+        
+        builder.Services.AddSingleton<IConnection>(sp =>
+        {
+            var factory = new ConnectionFactory()
+            {
+                HostName = "rabbitmq", // matches docker-compose service name
+                DispatchConsumersAsync = true
+            };
+
+            return factory.CreateConnection();
+        });
+
+        builder.Services.AddScoped<ITransactionQueue, RabbitMqTransactionQueue>();
 
         var app = builder.Build();
         
@@ -111,6 +128,7 @@ public class Program
         }
         
         // Scalar UI
+        app.MapOpenApi();
         app.MapScalarApiReference(options =>
         {
             options.WithTitle("Capitec Fraud Backend API");
