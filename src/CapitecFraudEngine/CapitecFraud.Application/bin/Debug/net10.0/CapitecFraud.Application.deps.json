@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "CapitecFraud.Application/1.0.0": {
+        "dependencies": {
+          "CapitecFraud.Domain": "1.0.0"
+        },
+        "runtime": {
+          "CapitecFraud.Application.dll": {}
+        }
+      },
+      "CapitecFraud.Domain/1.0.0": {
+        "runtime": {
+          "CapitecFraud.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "CapitecFraud.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CapitecFraud.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
