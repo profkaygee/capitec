@@ -16,7 +16,6 @@ public class FraudEndpoint:ICapitecFraudEndpoint
             [FromServices] ITransactionRepository transactionRepository,
             [FromServices] ITransactionQueue queue) =>
         {
-            transactionMessage.Id = Guid.NewGuid();
             transactionMessage.Timestamp = DateTime.UtcNow;
 
             await queue.PublishAsync(transactionMessage);
