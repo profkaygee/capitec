@@ -2,31 +2,31 @@
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: fraud-sql
+    # container_name: capitec-fraud-sql
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "Strong@Passw0rd123"
     ports:
       - "1433:1433"
     networks:
-      - fraud-net
+      - capitec-fraud-net
 
   redis:
     image: redis:7
-    container_name: fraud-redis
+    container_name: capitec-fraud-redis
     ports:
       - "6379:6379"
     networks:
-      - fraud-net
+      - capitec-fraud-net
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: fraud-rabbit
+    container_name: capitec-fraud-rabbit
     ports:
       - "5672:5672"
       - "15672:15672"
     networks:
-      - fraud-net
+      - capitec-fraud-net
 
   api:
     build:
@@ -34,15 +34,19 @@
       dockerfile: src/CapitecFraudEngine/CapitecFraud.Api/Dockerfile
     container_name: capitec-fraud-api
     depends_on:
-      - sqlserver
       - redis
       - rabbitmq
+      - sqlserver
     ports:
       - "5001:8080"
+      - "5005:5005"
     environment:
-      ConnectionStrings__FraudDb: "Server=sqlserver,1433;Database=CapitecFraudDb;User Id=sa;Password=YourStrong@Passw0rd123;TrustServerCertificate=True"
+      ConnectionStrings__CapitecFraudDb: "Server=localhost,1433;Database=CapitecFraudDb;User Id=sa;Password=Strong@Passw0rd123;Encrypt=False;TrustServerCertificate=True"
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: "true" 
+      DOTNET_WATCH: "1"
     networks:
-      - fraud-net
+      - capitec-fraud-net
 
   worker:
     build:
@@ -54,10 +58,11 @@
       - redis
       - rabbitmq
     environment:
-      ConnectionStrings__FraudDb: "Server=sqlserver,1433;Database=CapitecFraudDb;User Id=sa;Password=YourStrong@Passw0rd123;TrustServerCertificate=True"
+      ConnectionStrings__CapitecFraudDb: "Server=localhost,1433;Database=CapitecFraudDb;User Id=sa;Password=Strong@Passw0rd123;Encrypt=False;TrustServerCertificate=True"
     networks:
-      - fraud-net
+      - capitec-fraud-net
 
 networks:
-  fraud-net:
+  capitec-fraud-net:
+    name: capitec-fraud-net
     driver: bridge

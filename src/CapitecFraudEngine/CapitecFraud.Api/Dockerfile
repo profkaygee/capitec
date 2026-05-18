@@ -10,4 +10,7 @@ WORKDIR /app
 
 COPY --from=build /app .
 
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+
 ENTRYPOINT ["dotnet", "CapitecFraud.Api.dll"]

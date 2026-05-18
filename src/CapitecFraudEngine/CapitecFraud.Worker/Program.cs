@@ -11,6 +11,13 @@ public class Program
         builder.Services.AddHostedService<Worker>();
 
         builder.Services.AddScoped<IAuditService, AuditService>();
+        
+        // Register the database context
+        // builder.Services.AddDbContext<CapitecFraudDbContext>(options =>
+        // {
+        //     options.UseSqlServer(builder.Configuration.GetConnectionString("CapitecFraudDb"),
+        //         sqlServerOptionsAction: sqlOptions => sqlOptions.EnableRetryOnFailure());
+        // });
 
         var host = builder.Build();
         host.Run();

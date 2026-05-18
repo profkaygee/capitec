@@ -60,8 +60,12 @@ public class Program
         
         // Register the database context
         builder.Services.AddDbContext<CapitecFraudDbContext>(options =>
-            options.UseSqlServer(
-                builder.Configuration.GetConnectionString("CapitecFraudDb")));
+        {
+            Console.WriteLine("FINAL CONNECTION STRING >>> " +
+                builder.Configuration.GetConnectionString("CapitecFraudDb"));
+            options.UseSqlServer(builder.Configuration.GetConnectionString("CapitecFraudDb"),
+                sqlServerOptionsAction: sqlOptions => sqlOptions.EnableRetryOnFailure());
+        });
         
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddEndpointsApiExplorer();
@@ -120,12 +124,6 @@ public class Program
                 }
             });
         });
-
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.MapOpenApi();
-        }
         
         // Scalar UI
         app.MapOpenApi();
