@@ -13,7 +13,6 @@ public class FraudEndpoint:ICapitecFraudEndpoint
         // Get fraud transactions
         app.MapPost($"{prefix}/evaluate-transactions", async (
             [FromBody]TransactionMessage transactionMessage,
-            [FromServices] ITransactionRepository transactionRepository,
             [FromServices] ITransactionQueue queue) =>
         {
             transactionMessage.Timestamp = DateTime.UtcNow;
@@ -28,15 +27,13 @@ public class FraudEndpoint:ICapitecFraudEndpoint
         });
         
         // Get fraud transaction by identity
-        app.MapGet($"{prefix}/transactions/{{id}}", async (
-            [FromServices]ITransactionRepository transactionRepository) =>
+        app.MapGet($"{prefix}/transactions/{{id}}", async () =>
         {
 
         });
         
         // Get transaction audit trail
-        app.MapGet($"{prefix}/audit/{{id}}", async (
-            [FromServices]IAuditRepository auditRepository) =>
+        app.MapGet($"{prefix}/audit/{{id}}", async () =>
         {
 
         });

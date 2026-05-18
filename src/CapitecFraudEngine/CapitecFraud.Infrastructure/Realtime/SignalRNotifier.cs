@@ -4,29 +4,17 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace CapitecFraud.Infrastructure.Realtime;
 
-public class SignalRNotifier(IHubContext<Hub> hub):ISignalRNotifier
+public class SignalRNotifier:IRealtimeNotifier
 {
-    public async Task NotifyAsync(FraudResult result)
+    private readonly IHubContext<FraudNotificationHub> _hub;
+
+    public SignalRNotifier(IHubContext<FraudNotificationHub> hub)
     {
-        await hub.Clients.All.SendAsync(
-            "FraudEvaluated",
-            new
-            {
-                result.TransactionId,
-                result.RiskScore,
-                result.Decision,
-                Flags = result.Flags
-            });
+        _hub = hub;
     }
 
-    public async Task NotifyTransactionAsync(long transactionId, string message)
+    public Task NotifyAsync(FraudResult result)
     {
-        await hub.Clients.All.SendAsync(
-            "TransactionUpdate",
-            new
-            {
-                transactionId,
-                message
-            });
+        return _hub.Clients.All.SendAsync("fraudDetected", result);
     }
 }

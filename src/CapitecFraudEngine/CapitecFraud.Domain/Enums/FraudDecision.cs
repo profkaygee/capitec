@@ -1,4 +1,4 @@
-namespace CapitecFraud.Domain.Entities;
+namespace CapitecFraud.Domain.Enums;
 
 public enum FraudDecision
 {

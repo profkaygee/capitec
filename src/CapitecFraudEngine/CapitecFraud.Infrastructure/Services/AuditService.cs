@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Domain.Entities;
+using CapitecFraud.Domain.Enums;
 using CapitecFraud.Infrastructure.Persistence;
 
 namespace CapitecFraud.Infrastructure.Services;
@@ -14,7 +15,7 @@ public class AuditService(CapitecFraudDbContext context):IAuditService
             TransactionId = transaction.Id,
             AccountId = transaction.AccountId,
             Action = "FRAUD_EVALUATION",
-            Decision = result.Decision.ToString(),
+            Decision = result.Decision,
             RiskScore = result.RiskScore,
             Details = JsonSerializer.Serialize(result),
             CreatedAt = DateTime.UtcNow
@@ -31,7 +32,7 @@ public class AuditService(CapitecFraudDbContext context):IAuditService
             TransactionId = transactionId ?? Guid.Empty,
             AccountId = "",
             Action = action,
-            Decision = "",
+            Decision = FraudDecision.Review, // We review by default
             RiskScore = 0,
             Details = details,
             CreatedAt = DateTime.UtcNow

@@ -1,86 +1,90 @@
+using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Entities;
-using CapitecFraud.Domain.Rules;
+using CapitecFraud.Domain.Enums;
+
+namespace CapitecFraud.Application.Engines;
 
 public class FraudEngine
 {
+    private readonly IEnumerable<RuleConfig> _rules;
     private readonly FraudDecisionRuleConfig _decisionConfig;
 
-    public FraudEngine(FraudDecisionRuleConfig decisionConfig)
+    public FraudEngine(IEnumerable<RuleConfig> rules,
+        FraudDecisionRuleConfig decisionConfig)
     {
+        _rules = rules;
         _decisionConfig = decisionConfig;
     }
 
-    public FraudResult Evaluate(Transaction tx, IEnumerable<RuleConfig> rules)
+    public FraudResult Evaluate(TransactionMessage tx)
     {
-        var flags = new List<FraudFlag>();
         int score = 0;
+        var flags = new List<FraudFlag>();
 
-        foreach (var rule in rules.Where(r => r.IsActive))
+        foreach (var rule in _rules)
         {
-            var value = GetFieldValue(tx, rule.Field);
+            if (!rule.IsActive) continue;
 
-            if (value == null)
-                continue;
+            var fieldValue = GetField(tx, rule.Field);
 
-            if (EvaluateRule(rule, value))
+            if (Compare(fieldValue, rule))
             {
+                score += rule.ActionWeight;
+
                 flags.Add(new FraudFlag
                 {
                     RuleName = rule.Name,
-                    Description = $"{rule.Field} {rule.Operator} {rule.Value}",
                     Field = rule.Field,
-                    TriggerValue = rule.Value,
                     Operator = rule.Operator,
+                    TriggerValue = rule.Value,
                     ScoreImpact = rule.ActionWeight
                 });
-
-                score += rule.ActionWeight;
             }
         }
 
         return new FraudResult
         {
-            TransactionId = tx.Id,
             RiskScore = score,
             Decision = Decide(score),
             Flags = flags
         };
     }
 
-    private bool EvaluateRule(RuleConfig rule, object value)
+    private object GetField(TransactionMessage tx, string field)
     {
-        return rule.Operator switch
+        return field switch
         {
-            ">" => Convert.ToDecimal(value) > Convert.ToDecimal(rule.Value),
-            "<" => Convert.ToDecimal(value) < Convert.ToDecimal(rule.Value),
-            "=" => value.ToString() == rule.Value,
-            "IN" => rule.Value.Split(',').Contains(value.ToString()),
-            _ => false
+            "Amount" => tx.Amount,
+            "Country" => tx.Country,
+            "Category" => tx.Category,
+            "AccountId" => tx.AccountId,
+            "Currency" => tx.Currency,
+            _ => null
         };
     }
 
-    private object GetFieldValue(Transaction txn, string field)
+    private bool Compare(object fieldValue, RuleConfig rule)
     {
-        return Map.TryGetValue(field, out var getter)
-            ? getter(txn)
-            : null;
-    }
+        if (fieldValue == null) return false;
 
-    private static readonly Dictionary<string, Func<Transaction, object>> Map = new()
-    {
-        ["Amount"] = t => t.Amount,
-        ["Country"] = t => t.Country,
-        ["Category"] = t => t.Category,
-        ["AccountId"] = t => t.AccountId
-    };
+        return rule.Operator switch
+        {
+            ">" => Convert.ToDecimal(fieldValue) > Convert.ToDecimal(rule.Value),
+            "<" => Convert.ToDecimal(fieldValue) < Convert.ToDecimal(rule.Value),
+            "=" => fieldValue.ToString() == rule.Value,
+            "IN" => rule.Value.Split(',').Contains(fieldValue.ToString()),
+            _ => false
+        };
+    }
 
     private FraudDecision Decide(int score)
     {
         if (score >= _decisionConfig.BlockThreshold)
             return FraudDecision.Block;
 
-        return score >= _decisionConfig.ReviewThreshold 
-            ? FraudDecision.Review 
-            : FraudDecision.Allow;
+        if (score >= _decisionConfig.ReviewThreshold)
+            return FraudDecision.Review;
+
+        return FraudDecision.Allow;
     }
 }

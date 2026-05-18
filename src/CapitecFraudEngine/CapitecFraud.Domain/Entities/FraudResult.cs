@@ -1,3 +1,5 @@
+using CapitecFraud.Domain.Enums;
+
 namespace CapitecFraud.Domain.Entities;
 
 public class FraudResult

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 
-namespace CapitecFraud.Api.Hubs;
+namespace CapitecFraud.Infrastructure.Realtime;
 
 public class FraudNotificationHub:Hub
 {

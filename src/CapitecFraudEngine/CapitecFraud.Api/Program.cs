@@ -1,10 +1,10 @@
 using CapitecFraud.Api.Endpoints;
-using CapitecFraud.Api.Hubs;
 using CapitecFraud.Api.Middleware;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Common.Responses;
 using CapitecFraud.Infrastructure.Messaging;
 using CapitecFraud.Infrastructure.Persistence;
+using CapitecFraud.Infrastructure.Realtime;
 using CapitecFraud.Infrastructure.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
