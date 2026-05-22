@@ -12,7 +12,6 @@ public class AuditService(CapitecFraudDbContext context):IAuditService
     {
         var audit = new AuditLog
         {
-            Id = transaction.Id,
             TransactionId = transaction.TransactionId,
             AccountId = transaction.AccountId,
             Action = "FRAUD_EVALUATION",

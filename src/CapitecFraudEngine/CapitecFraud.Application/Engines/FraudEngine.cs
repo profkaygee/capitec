@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
@@ -44,7 +45,7 @@ public class FraudEngine
                     TriggerValue = rule.Value,
                     ScoreImpact = rule.ActionWeight
                 });
-                _logger.LogInformation("Added flag: {Flag}", flags.Last());
+                _logger.LogInformation("Added flag: {Flag}", JsonSerializer.Serialize(flags.Last()));
             }
         }
 
@@ -92,6 +93,7 @@ public class FraudEngine
 
     private bool Compare(object fieldValue, RuleConfig rule)
     {
+        if (fieldValue == null) 
             return false;
 
         return rule.Operator switch
