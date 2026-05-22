@@ -2,7 +2,7 @@ using CapitecFraud.Application.Abstractions;
 
 namespace CapitecFraud.Infrastructure.Repositories;
 
-public class FakeAuthRepository:IAuthRepository
+public class FakeAuthRepository : IAuthRepository
 {
     private static readonly Dictionary<string, List<DateTime>> FailedLogins = new();
     private static readonly Dictionary<string, DateTime> PasswordResets = new();
@@ -28,8 +28,6 @@ public class FakeAuthRepository:IAuthRepository
         var minutes = (DateTime.UtcNow - passwordResetDateTime).Minutes;
         return Task.FromResult(minutes);
     }
-
-    // 🔧 Helper methods (simulate activity)
 
     public static void SimulateFailedLogin(string accountId)
     {

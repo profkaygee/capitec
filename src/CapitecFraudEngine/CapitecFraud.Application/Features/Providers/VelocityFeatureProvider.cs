@@ -3,23 +3,17 @@ using CapitecFraud.Application.Models;
 
 namespace CapitecFraud.Application.Features.Providers;
 
-public class VelocityFeatureProvider : IFeatureProvider
+public class VelocityFeatureProvider(ITransactionRepository transactionRepository) 
+: IFeatureProvider
 {
-    private readonly ITransactionRepository _repo;
-
-    public VelocityFeatureProvider(ITransactionRepository repo)
-    {
-        _repo = repo;
-    }
-
     public async Task EnrichAsync(FraudEvaluationContext context)
     {
         var id = context.Transaction.AccountId;
 
         context.TransactionCountLast1Min =
-            await _repo.CountTransactions(id, TimeSpan.FromMinutes(1));
+            await transactionRepository.CountTransactions(id, TimeSpan.FromMinutes(1));
 
         context.TransactionCountLast10Min =
-            await _repo.CountTransactions(id, TimeSpan.FromMinutes(10));
+            await transactionRepository.CountTransactions(id, TimeSpan.FromMinutes(10));
     }
 }

@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CapitecFraud.Api.Endpoints;
 
-public class FraudEndpoint:ICapitecFraudEndpoint
+public class FraudEndpoint : ICapitecFraudEndpoint
 {
     public void RegisterEndpointRoutes(IEndpointRouteBuilder app, string prefix)
     {
         // Get fraud transactions
         app.MapPost($"{prefix}/evaluate-transactions", async (
-            [FromBody]TransactionMessage transactionMessage,
+            [FromBody] TransactionMessage transactionMessage,
             [FromServices] ITransactionQueue queue) =>
         {
             transactionMessage.Timestamp = DateTime.UtcNow;
@@ -26,13 +26,13 @@ public class FraudEndpoint:ICapitecFraudEndpoint
                 TransactionDate = DateTime.UtcNow
             });
         });
-        
+
         // Get fraud transaction by identity
         app.MapGet($"{prefix}/transactions/{{id}}", async () =>
         {
 
         });
-        
+
         // Get transaction audit trail
         app.MapGet($"{prefix}/audit/{{id}}", async () =>
         {

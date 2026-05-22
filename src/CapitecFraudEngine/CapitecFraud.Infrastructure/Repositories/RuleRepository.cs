@@ -5,25 +5,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CapitecFraud.Infrastructure.Repositories;
 
-public class RuleRepository : IRuleRepository
+public class RuleRepository(CapitecFraudDbContext database) 
+    : IRuleRepository
 {
-    private readonly CapitecFraudDbContext _db;
-
-    public RuleRepository(CapitecFraudDbContext db)
-    {
-        _db = db;
-    }
-
     public async Task<IList<RuleConfig>> GetActiveRulesAsync()
     {
-        return await _db.RuleConfigs
+        return await database.RuleConfigs
             .Where(x => x.IsActive)
             .ToListAsync();
     }
 
     public async Task<FraudDecisionRuleConfig> GetDecisionConfigAsync()
     {
-        return await _db.FraudDecisionRuleConfigs
+        return await database.FraudDecisionRuleConfigs
             .FirstOrDefaultAsync();
     }
 }

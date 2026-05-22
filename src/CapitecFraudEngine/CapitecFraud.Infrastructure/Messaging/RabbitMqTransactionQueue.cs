@@ -7,18 +7,11 @@ using RabbitMQ.Client.Events;
 
 namespace CapitecFraud.Infrastructure.Messaging;
 
-public class RabbitMqTransactionQueue : ITransactionQueue
+public class RabbitMqTransactionQueue(IConnection connection) : ITransactionQueue
 {
-    private readonly IConnection _connection;
-
-    public RabbitMqTransactionQueue(IConnection connection)
-    {
-        _connection = connection;
-    }
-
     public Task PublishAsync(TransactionMessage message)
     {
-        var channel = _connection.CreateModel();
+        var channel = connection.CreateModel();
 
         channel.QueueDeclare("transactions", true, false, false);
 
@@ -32,10 +25,10 @@ public class RabbitMqTransactionQueue : ITransactionQueue
 
         return Task.CompletedTask;
     }
-    
-    public async Task ConsumeAsync(Func<TransactionMessage, Task> handler)
+
+    public Task ConsumeAsync(Func<TransactionMessage, Task> handler)
     {
-        var channel = _connection.CreateModel();
+        var channel = connection.CreateModel();
 
         channel.QueueDeclare(
             queue: "transactions",
@@ -49,7 +42,7 @@ public class RabbitMqTransactionQueue : ITransactionQueue
         {
             var body = args.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
-            
+
             var message = JsonSerializer.Deserialize<TransactionMessage>(json);
 
             if (message is null)
@@ -65,5 +58,7 @@ public class RabbitMqTransactionQueue : ITransactionQueue
             queue: "transactions",
             autoAck: false,
             consumer: consumer);
+
+        return Task.CompletedTask;
     }
 }

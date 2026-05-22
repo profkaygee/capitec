@@ -13,6 +13,7 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly ITransactionQueue _queue;
     private readonly IRuleRepository _ruleRepository;
+    private readonly ITransactionRepository _transactionRepository;
     private readonly IFraudResultRepository _fraudResultRepository;
     private readonly IAuditService _auditService;
     private readonly IRealtimeNotifier _notifier;
@@ -27,7 +28,8 @@ public class Worker : BackgroundService
         IAuditService auditService,
         FraudEngine engine,
         IRealtimeNotifier notifier,
-        FeatureEnrichmentService enrichment)
+        FeatureEnrichmentService enrichment,
+        ITransactionRepository transactionRepository)
     {
         _logger = logger;
         _queue = queue;
@@ -37,6 +39,7 @@ public class Worker : BackgroundService
         _notifier = notifier;
         _engine = engine;
         _enrichment = enrichment;
+        _transactionRepository = transactionRepository;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -61,6 +64,7 @@ public class Worker : BackgroundService
             try
             {
                 _logger.LogInformation("Processing transaction with ID [{TransactionId}]", message.TransactionId);
+                await _transactionRepository.AddAsync(context.Transaction);
 
                 var rules = await _ruleRepository.GetActiveRulesAsync();
                 _logger.LogInformation("Loaded {RuleCount} rules", rules.Count);

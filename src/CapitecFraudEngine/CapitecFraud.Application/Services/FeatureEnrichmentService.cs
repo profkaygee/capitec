@@ -12,11 +12,11 @@ public class FeatureEnrichmentService
         _providers = providers;
     }
 
-    public async Task<FraudEvaluationContext> BuildAsync(TransactionMessage tx)
+    public async Task<FraudEvaluationContext> BuildAsync(TransactionMessage txn)
     {
         var context = new FraudEvaluationContext
         {
-            Transaction = tx
+            Transaction = txn
         };
 
         foreach (var provider in _providers)

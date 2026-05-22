@@ -6,26 +6,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CapitecFraud.Infrastructure.Repositories;
 
-public class DeviceRepository : IDeviceRepository
+public class DeviceRepository(CapitecFraudDbContext database, DeviceFingerprintService fingerprintService) 
+: IDeviceRepository
 {
-    private readonly CapitecFraudDbContext _db;
-    private readonly DeviceFingerprintService _fingerprint;
-
-    public DeviceRepository(CapitecFraudDbContext db, DeviceFingerprintService fingerprint)
-    {
-        _db = db;
-        _fingerprint = fingerprint;
-    }
-
     public async Task<string> GetDeviceId(string accountId)
     {
         // In real life: pass IP + UserAgent from request
         var ip = "127.0.0.1";
         var userAgent = "demo-agent";
 
-        var fingerprint = _fingerprint.Generate(accountId, ip, userAgent);
+        var fingerprint = fingerprintService.Generate(accountId, ip, userAgent);
 
-        var device = await _db.Devices
+        var device = await database.Devices
             .Include(d => d.AccountDevices)
             .FirstOrDefaultAsync(d => d.Fingerprint == fingerprint);
 
@@ -38,34 +30,34 @@ public class DeviceRepository : IDeviceRepository
                 LastSeen = DateTime.UtcNow
             };
 
-            _db.Devices.Add(device);
-            await _db.SaveChangesAsync();
+            database.Devices.Add(device);
+            await database.SaveChangesAsync();
         }
 
         // Link account to device if not already linked
-        var exists = await _db.AccountDevices
+        var exists = await database.AccountDevices
             .AnyAsync(ad => ad.AccountId == accountId && ad.DeviceId == device.Id);
 
-        if (exists) 
+        if (exists)
             return device.Id;
-        
-        _db.AccountDevices.Add(new AccountDevice
+
+        database.AccountDevices.Add(new AccountDevice
         {
             AccountId = accountId,
             DeviceId = device.Id
         });
 
-        await _db.SaveChangesAsync();
+        await database.SaveChangesAsync();
         return device.Id;
     }
 
     public async Task<bool> IsNewDevice(string deviceId)
     {
-        var device = await _db.Devices
+        var device = await database.Devices
             .Include(d => d.AccountDevices)
             .FirstOrDefaultAsync(d => d.Id == deviceId);
 
-        if (device == null) 
+        if (device == null)
             return true;
 
         // If only 1 account has ever used it → likely new
@@ -74,7 +66,7 @@ public class DeviceRepository : IDeviceRepository
 
     public async Task<int> CountAccountsUsingDevice(string deviceId)
     {
-        return await _db.AccountDevices
+        return await database.AccountDevices
             .Where(ad => ad.DeviceId == deviceId)
             .Select(ad => ad.AccountId)
             .Distinct()
