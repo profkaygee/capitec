@@ -23,7 +23,8 @@ public class FraudEngine
 
         foreach (var rule in _rules)
         {
-            if (!rule.IsActive) continue;
+            if (!rule.IsActive) 
+                continue;
 
             var fieldValue = GetField(tx, rule.Field);
 
@@ -77,14 +78,13 @@ public class FraudEngine
         };
     }
 
-    private FraudDecision Decide(int score)
+    public FraudDecision Decide(int score)
     {
         if (score >= _decisionConfig.BlockThreshold)
             return FraudDecision.Block;
 
-        if (score >= _decisionConfig.ReviewThreshold)
-            return FraudDecision.Review;
-
-        return FraudDecision.Allow;
+        return score >= _decisionConfig.ReviewThreshold 
+            ? FraudDecision.Review 
+            : FraudDecision.Allow;
     }
 }

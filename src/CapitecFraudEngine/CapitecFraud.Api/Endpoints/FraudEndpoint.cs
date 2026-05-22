@@ -22,7 +22,8 @@ public class FraudEndpoint:ICapitecFraudEndpoint
             return ApiResults.Accepted(new
             {
                 message = "Transaction queued for fraud evaluation",
-                id = transactionMessage.Id
+                id = transactionMessage.Id,
+                TransactionDate = DateTime.UtcNow
             });
         });
         

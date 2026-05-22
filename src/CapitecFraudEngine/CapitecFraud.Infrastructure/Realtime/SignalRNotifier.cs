@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace CapitecFraud.Infrastructure.Realtime;
 
-public class SignalRNotifier:IRealtimeNotifier
+public class SignalRNotifier : IRealtimeNotifier
 {
     private readonly IHubContext<FraudNotificationHub> _hub;
 

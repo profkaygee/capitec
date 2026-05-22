@@ -1,6 +1,8 @@
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Engines;
 using CapitecFraud.Application.Models;
+using CapitecFraud.Domain.Abstractions.Repositories;
+using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Infrastructure.Persistence;
 
@@ -24,18 +26,17 @@ public class TransactionConsumer
         var audit = scope.ServiceProvider.GetRequiredService<IAuditService>();
         var notifier = scope.ServiceProvider.GetRequiredService<IRealtimeNotifier>();
 
-        var rules = await rulesRepo.GetActiveRules();
-        var decisionConfig = await rulesRepo.GetDecisionConfig();
+        var rules = await rulesRepo.GetActiveRulesAsync();
+        var decisionConfig = await rulesRepo.GetDecisionConfigAsync();
 
         var engine = new FraudEngine(rules, decisionConfig);
 
         var result = engine.Evaluate(msg);
 
-        await resultRepo.SaveAsync(result);
+        await resultRepo.AddAsync(result);
         
-        await audit.LogAsync(new Transaction()
+        await audit.LogAsync(new TransactionMessage()
         {
-            Id = msg.Id,
             AccountId = msg.AccountId,
             Amount = msg.Amount,
             Country = msg.Country,

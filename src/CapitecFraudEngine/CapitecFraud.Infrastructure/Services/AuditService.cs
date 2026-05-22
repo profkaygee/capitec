@@ -1,5 +1,6 @@
 using System.Text.Json;
-using CapitecFraud.Application.Abstractions;
+using CapitecFraud.Application.Models;
+using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
 using CapitecFraud.Infrastructure.Persistence;
@@ -8,11 +9,12 @@ namespace CapitecFraud.Infrastructure.Services;
 
 public class AuditService(CapitecFraudDbContext context):IAuditService
 {
-    public async Task LogAsync(Transaction transaction, FraudResult result)
+    public async Task LogAsync(TransactionMessage transaction, FraudResult result)
     {
         var audit = new AuditLog
         {
-            TransactionId = transaction.Id,
+            Id = transaction.Id,
+            TransactionId = transaction.TransactionId,
             AccountId = transaction.AccountId,
             Action = "FRAUD_EVALUATION",
             Decision = result.Decision,

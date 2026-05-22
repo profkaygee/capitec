@@ -26,7 +26,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CapitecFraud.Application\CapitecFraud.Application.csproj" />
       <ProjectReference Include="..\CapitecFraud.Infrastructure\CapitecFraud.Infrastructure.csproj" />
     </ItemGroup>
 </Project>

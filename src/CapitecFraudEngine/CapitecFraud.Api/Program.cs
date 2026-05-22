@@ -2,9 +2,13 @@ using CapitecFraud.Api.Endpoints;
 using CapitecFraud.Api.Middleware;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Common.Responses;
+using CapitecFraud.Domain.Abstractions.Repositories;
+using CapitecFraud.Domain.Abstractions.Services;
+using CapitecFraud.Infrastructure.Extensions;
 using CapitecFraud.Infrastructure.Messaging;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Realtime;
+using CapitecFraud.Infrastructure.Repositories;
 using CapitecFraud.Infrastructure.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +88,8 @@ public class Program
         });
 
         builder.Services.AddScoped<ITransactionQueue, RabbitMqTransactionQueue>();
+        builder.Services.AddScoped<IRuleRepository, RuleRepository>();
+        builder.Services.AddFraudServices();
 
         var app = builder.Build();
         

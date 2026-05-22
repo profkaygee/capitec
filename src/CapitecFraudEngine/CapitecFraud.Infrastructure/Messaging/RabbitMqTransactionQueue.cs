@@ -3,6 +3,7 @@ using System.Text.Json;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Models;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace CapitecFraud.Infrastructure.Messaging;
 
@@ -17,22 +18,52 @@ public class RabbitMqTransactionQueue : ITransactionQueue
 
     public Task PublishAsync(TransactionMessage message)
     {
-        using var channel = _connection.CreateModel();
+        var channel = _connection.CreateModel();
+
+        channel.QueueDeclare("transactions", true, false, false);
+
+        var body = Encoding.UTF8.GetBytes(
+            JsonSerializer.Serialize(message));
+
+        channel.BasicPublish(
+            exchange: "",
+            routingKey: "transactions",
+            body: body);
+
+        return Task.CompletedTask;
+    }
+    
+    public async Task ConsumeAsync(Func<TransactionMessage, Task> handler)
+    {
+        var channel = _connection.CreateModel();
 
         channel.QueueDeclare(
-            queue: "fraud.transactions",
+            queue: "transactions",
             durable: true,
             exclusive: false,
             autoDelete: false);
 
-        var json = JsonSerializer.Serialize(message);
-        var body = Encoding.UTF8.GetBytes(json);
+        var consumer = new AsyncEventingBasicConsumer(channel);
 
-        channel.BasicPublish(
-            exchange: "",
-            routingKey: "fraud.transactions",
-            body: body);
+        consumer.Received += async (sender, args) =>
+        {
+            var body = args.Body.ToArray();
+            var json = Encoding.UTF8.GetString(body);
+            
+            var message = JsonSerializer.Deserialize<TransactionMessage>(json);
 
-        return Task.CompletedTask;
+            if (message is null)
+            {
+                return;
+            }
+
+            await handler(message);
+            channel.BasicAck(args.DeliveryTag, multiple: false);
+        };
+
+        channel.BasicConsume(
+            queue: "transactions",
+            autoAck: false,
+            consumer: consumer);
     }
 }

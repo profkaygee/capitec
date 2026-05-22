@@ -41,7 +41,7 @@
       - "5001:8080"
       - "5005:5005"
     environment:
-      ConnectionStrings__CapitecFraudDb: "Server=localhost,1433;Database=CapitecFraudDb;User Id=sa;Password=Strong@Passw0rd123;Encrypt=False;TrustServerCertificate=True"
+      ConnectionStrings__CapitecFraudDb: "Server=sqlserver,1433;Database=CapitecFraudDb;User Id=sa;Password=Strong@Passw0rd123;Encrypt=False;TrustServerCertificate=True"
       ASPNETCORE_ENVIRONMENT: Development
       DOTNET_USE_POLLING_FILE_WATCHER: "true" 
       DOTNET_WATCH: "1"
@@ -58,7 +58,7 @@
       - redis
       - rabbitmq
     environment:
-      ConnectionStrings__CapitecFraudDb: "Server=localhost,1433;Database=CapitecFraudDb;User Id=sa;Password=Strong@Passw0rd123;Encrypt=False;TrustServerCertificate=True"
+      ConnectionStrings__CapitecFraudDb: "Server=sqlserver,1433;Database=CapitecFraudDb;User Id=sa;Password=Strong@Passw0rd123;Encrypt=False;TrustServerCertificate=True"
     networks:
       - capitec-fraud-net
 
