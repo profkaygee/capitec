@@ -1,8 +1,10 @@
 using CapitecFraud.Application.Abstractions;
+using CapitecFraud.Application.Engines;
 using CapitecFraud.Application.Features.Providers;
 using CapitecFraud.Application.Rules;
 using CapitecFraud.Application.Services;
 using CapitecFraud.Domain.Abstractions.Rules;
+using CapitecFraud.Domain.Entities;
 using CapitecFraud.Infrastructure.Repositories;
 using CapitecFraud.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<FeatureEnrichmentService>();
         services.AddScoped<IRuleEvaluator, RuleEvaluator>();
         services.AddScoped<RuleEngine>();
-        // services.AddScoped<FraudProcessingPipeline>();
+        services.AddScoped<FraudEngine>();
 
         return services;
     }

@@ -3,6 +3,7 @@ using CapitecFraud.Application.Models;
 using CapitecFraud.Application.Rules;
 using CapitecFraud.Application.Services;
 using CapitecFraud.Domain.Entities;
+using CapitecFraud.Domain.Enums;
 
 public class FraudProcessingPipeline
 {
@@ -29,14 +30,14 @@ public class FraudProcessingPipeline
         var score = _ruleEngine.Execute(context);
 
         // 3. Decide
-        var decision = _decision.Decide(score);
+        //var decision = _decision.Decide(score);
 
         return new FraudResult
         {
             Id = transaction.Id,
             TransactionId = transaction.TransactionId,
             RiskScore = score,
-            Decision = decision
+            Decision = FraudDecision.Allow
         };
     }
 }

@@ -32,7 +32,8 @@ public class AccountRepository : IAccountRepository
             .Where(t => t.AccountId == accountId && t.Timestamp >= last30Days)
             .ToListAsync();
 
-        if (!transactions.Any()) return 0;
+        if (!transactions.Any()) 
+            return 0;
 
         var avg = transactions.Average(t => t.Amount);
         var latest = transactions.OrderByDescending(t => t.Timestamp).First().Amount;

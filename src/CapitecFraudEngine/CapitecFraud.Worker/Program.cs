@@ -18,17 +18,17 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var builder = Host.CreateApplicationBuilder(args);
-        builder.Services.AddHostedService<Worker>();
-        
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Service", "FraudWorker")
             .CreateLogger();
+
+        var builder = Host.CreateApplicationBuilder(args);
+        builder.Services.AddHostedService<Worker>();
         
         builder.Logging.ClearProviders();
-        builder.Logging.AddSerilog();
+        builder.Logging.AddSerilog(Log.Logger, dispose: true);
 
         builder.Services.AddScoped<IAuditService, AuditService>();
         builder.Services.AddScoped<ITransactionQueue, RabbitMqTransactionQueue>();

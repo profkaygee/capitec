@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
-        <Nullable>enable</Nullable>
+        <Nullable>disable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-CapitecFraud.Worker-5db7bea1-9ddb-4095-b3dc-8952deefab4b</UserSecretsId>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
