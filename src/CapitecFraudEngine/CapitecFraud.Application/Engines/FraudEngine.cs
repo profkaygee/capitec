@@ -109,10 +109,10 @@ public class FraudEngine
     public FraudDecision Decide(int score,FraudDecisionRuleConfig _decisionConfig)
     {
         if (score >= _decisionConfig.BlockThreshold)
-            return FraudDecision.Block;
+            return FraudDecision.BLOCK;
 
         return score >= _decisionConfig.ReviewThreshold 
-            ? FraudDecision.Review 
-            : FraudDecision.Allow;
+            ? FraudDecision.REVIEW 
+            : FraudDecision.ALLOW;
     }
 }

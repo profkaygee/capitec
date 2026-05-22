@@ -2,7 +2,7 @@ using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Engines;
 using CapitecFraud.Application.Features.Providers;
 using CapitecFraud.Application.Services;
-using CapitecFraud.Domain.Entities;
+using CapitecFraud.Application.Validation;
 using CapitecFraud.Infrastructure.Repositories;
 using CapitecFraud.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         // Core engines
         services.AddScoped<FeatureEnrichmentService>();
         services.AddScoped<FraudEngine>();
+        services.AddScoped<TransactionGuard>();
 
         return services;
     }

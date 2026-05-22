@@ -4,6 +4,7 @@ using CapitecFraud.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CapitecFraud.Infrastructure.Migrations
 {
     [DbContext(typeof(CapitecFraudDbContext))]
-    partial class CapitecFraudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260522235253_AddReasonColumnToFraudResults")]
+    partial class AddReasonColumnToFraudResults
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

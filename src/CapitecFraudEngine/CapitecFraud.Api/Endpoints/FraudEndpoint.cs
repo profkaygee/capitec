@@ -1,7 +1,9 @@
 using CapitecFraud.Api.Common;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Models;
+using CapitecFraud.Application.Validation;
 using CapitecFraud.Domain.Entities;
+using CapitecFraud.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CapitecFraud.Api.Endpoints;
@@ -13,9 +15,20 @@ public class FraudEndpoint : ICapitecFraudEndpoint
         // Get fraud transactions
         app.MapPost($"{prefix}/evaluate-transactions", async (
             [FromBody] TransactionMessage transactionMessage,
+            [FromServices] TransactionGuard guard,
+            [FromServices] ILogger<FraudEndpoint> logger,
             [FromServices] ITransactionQueue queue) =>
         {
             transactionMessage.Timestamp = DateTime.UtcNow;
+            
+            // Validate the message first
+            var validationResult = guard.Validate(transactionMessage);
+            if (!validationResult.IsValid)
+            {
+                logger.LogInformation("Transaction validation failed with reason: {Reason} and decision: {Decision}",
+                    validationResult.Reason, MapGuardAction(validationResult.Action));
+                return ApiResults.BadRequest(validationResult.Reason);
+            }
 
             await queue.PublishAsync(transactionMessage);
 
@@ -38,5 +51,16 @@ public class FraudEndpoint : ICapitecFraudEndpoint
         {
 
         });
+    }
+
+    private FraudDecision MapGuardAction(GuardAction action)
+    {
+        return action switch
+        {
+            GuardAction.Reject => FraudDecision.REJECT,
+            GuardAction.Quarantine => FraudDecision.QUARANTINE,
+            GuardAction.Review => FraudDecision.REVIEW,
+            _ => FraudDecision.ALLOW
+        };
     }
 }
