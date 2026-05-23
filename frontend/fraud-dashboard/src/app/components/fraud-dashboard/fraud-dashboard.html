@@ -1,0 +1,43 @@
+<div class="dashboard-container">
+
+    <header class="header">
+      <h1>Fraud Monitoring Console</h1>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="label">Total Events</div>
+          <div class="value">{{ events().length }}</div>
+        </div>
+      </div>
+    </header>
+  
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Amount</th>
+            <th>Score</th>
+            <th>Decision</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+  
+        <tbody>
+          @for (e of events(); track e.transactionId) {
+            <tr>
+              <td>{{ e.accountId }}</td>
+              <td>R {{ e.amount }}</td>
+              <td>{{ e.score }}</td>
+              <td>
+                <span class="badge" [class]="e.decision.toLowerCase()">
+                  {{ e.decision }}
+                </span>
+              </td>
+              <td>{{ e.timestamp | date:'short' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  
+  </div>

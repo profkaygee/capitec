@@ -1,0 +1,123 @@
+:host {
+    display: block;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: #0b1220;
+    min-height: 100vh;
+    color: #e5e7eb;
+  }
+  
+  /* Layout container */
+  .dashboard-container {
+    padding: 24px;
+  }
+  
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  
+  /* STAT CARD */
+  .stats {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .stat-card {
+    background: #111827;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+    min-width: 140px;
+  }
+  
+  .stat-card .label {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  
+  .stat-card .value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  
+  /* TABLE */
+  .table-wrapper {
+    background: #111827;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #1f2937;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  thead {
+    background: #0f172a;
+  }
+  
+  th {
+    text-align: left;
+    padding: 14px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #9ca3af;
+    letter-spacing: 0.05em;
+  }
+  
+  td {
+    padding: 14px;
+    border-top: 1px solid #1f2937;
+    font-size: 14px;
+  }
+  
+  /* ROW HOVER */
+  tr:hover {
+    background: #1f2937;
+  }
+  
+  /* BADGES */
+  .badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  /* DECISION COLORS */
+  .badge.allow {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+  }
+  
+  .badge.review {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+  
+  .badge.quarantine {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+  }
+  
+  .badge.reject {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+  
+  /* SCROLL BEHAVIOUR */
+  .table-wrapper {
+    max-height: 70vh;
+    overflow-y: auto;
+  }

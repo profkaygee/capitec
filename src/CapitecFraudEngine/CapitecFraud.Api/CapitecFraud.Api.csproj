@@ -35,8 +35,4 @@
       <ProjectReference Include="..\CapitecFraud.Infrastructure\CapitecFraud.Infrastructure.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Hubs\" />
-    </ItemGroup>
-
 </Project>
