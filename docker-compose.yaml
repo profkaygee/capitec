@@ -11,14 +11,6 @@
     networks:
       - capitec-fraud-net
 
-  redis:
-    image: redis:7
-    container_name: capitec-fraud-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - capitec-fraud-net
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: capitec-fraud-rabbit
@@ -34,7 +26,6 @@
       dockerfile: src/CapitecFraudEngine/CapitecFraud.Api/Dockerfile
     container_name: capitec-fraud-api
     depends_on:
-      - redis
       - rabbitmq
       - sqlserver
     ports:
@@ -55,7 +46,6 @@
     container_name: capitec-fraud-worker
     depends_on:
       - sqlserver
-      - redis
       - rabbitmq
     environment:
       ConnectionStrings__CapitecFraudDb: "Server=sqlserver,1433;Database=CapitecFraudDb;User Id=sa;Password=Strong@Passw0rd123;Encrypt=False;TrustServerCertificate=True"

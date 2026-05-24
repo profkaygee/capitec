@@ -1,5 +1,5 @@
 using CapitecFraud.Application.Abstractions;
-using CapitecFraud.Application.Models;
+using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Application.Features.Providers;
 
@@ -10,10 +10,7 @@ public class AccountBehaviorFeatureProvider(IAccountRepository repo)
     {
         var id = context.Transaction.AccountId;
 
-        context.DaysSinceLastTransaction =
-            await repo.DaysSinceLastTransaction(id);
-
-        context.SpendingDeviationPercent =
-            await repo.GetSpendingDeviation(id);
+        context.DaysSinceLastTransaction = await repo.DaysSinceLastTransaction(id);
+        context.SpendingDeviationPercent = await repo.GetSpendingDeviation(id);
     }
 }

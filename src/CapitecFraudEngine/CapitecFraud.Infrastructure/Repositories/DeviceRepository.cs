@@ -1,20 +1,24 @@
+using Bogus;
+using Bogus.DataSets;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
-using CapitecFraud.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace CapitecFraud.Infrastructure.Repositories;
 
-public class DeviceRepository(CapitecFraudDbContext database, IDeviceFingerprintService fingerprintService) 
-: IDeviceRepository
+public class DeviceRepository(CapitecFraudDbContext database, 
+    IDeviceFingerprintService fingerprintService) : IDeviceRepository
 {
     public async Task<string> GetDeviceId(string accountId)
     {
+        Randomizer.Seed = new Random(5);
+        var faker = new Faker();
+        
         // In real life: pass IP + UserAgent from request
-        var ip = "127.0.0.1";
-        var userAgent = "demo-agent";
+        var ip = faker.Internet.Ip();
+        var userAgent = faker.Internet.UserAgent();
 
         var fingerprint = fingerprintService.Generate(accountId, ip, userAgent);
 
@@ -27,6 +31,7 @@ public class DeviceRepository(CapitecFraudDbContext database, IDeviceFingerprint
             device = new Device
             {
                 Fingerprint = fingerprint,
+                IpAddress = ip,
                 FirstSeen = DateTime.UtcNow,
                 LastSeen = DateTime.UtcNow
             };
@@ -61,7 +66,6 @@ public class DeviceRepository(CapitecFraudDbContext database, IDeviceFingerprint
         if (device == null)
             return true;
 
-        // If only 1 account has ever used it → likely new
         return device.AccountDevices.Count <= 1;
     }
 
@@ -70,6 +74,23 @@ public class DeviceRepository(CapitecFraudDbContext database, IDeviceFingerprint
         return await database.AccountDevices
             .Where(ad => ad.DeviceId == deviceId)
             .Select(ad => ad.AccountId)
+            .Distinct()
+            .CountAsync();
+    }
+
+    public async Task<string> GetDeviceIpAddress(string transactionAccountId)
+    {
+        return await database.AccountDevices
+            .Where(ad => ad.AccountId == transactionAccountId)
+            .Select(ad => ad.Device.IpAddress)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<int> CountIpAddresses(string deviceId)
+    {
+        return await database.Devices
+            .Where(d => d.Id == deviceId)
+            .Select(d => d.IpAddress)
             .Distinct()
             .CountAsync();
     }

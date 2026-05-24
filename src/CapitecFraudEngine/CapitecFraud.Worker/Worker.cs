@@ -1,13 +1,9 @@
 using System.Text.Json;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Engines;
-using CapitecFraud.Application.Models;
 using CapitecFraud.Application.Services;
-using CapitecFraud.Application.Validation;
 using CapitecFraud.Domain.Abstractions.Repositories;
 using CapitecFraud.Domain.Abstractions.Services;
-using CapitecFraud.Domain.Entities;
-using CapitecFraud.Domain.Enums;
 using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Worker;
@@ -31,7 +27,9 @@ public class Worker(
         await queue.ConsumeAsync(async (TransactionMessage message) =>
         {
             var context = await enrichment.BuildAsync(message);
-
+            
+            logger.LogInformation("Transaction enriched with context: {Context}", JsonSerializer.Serialize(context));
+            
             using var scope = logger.BeginScope(new Dictionary<string, object>
             {
                 ["TransactionId"] = context.Transaction.TransactionId,
@@ -68,7 +66,7 @@ public class Worker(
                 await notifier.NotifyAsync(result);
                 logger.LogInformation("Notification sent.");
 
-                logger.LogInformation("✅ Transaction processed successfully with score {score} and decision {Decision}",
+                logger.LogInformation("Transaction processed successfully with score {score} and decision {Decision}",
                     result.RiskScore, result.Decision);
             }
             catch (Exception ex)

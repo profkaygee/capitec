@@ -27,7 +27,7 @@ public class FraudEngineTest
         var score = 150;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.BLOCK, decision);
@@ -41,7 +41,7 @@ public class FraudEngineTest
         var score = 100;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.BLOCK, decision);
@@ -55,7 +55,7 @@ public class FraudEngineTest
         var score = 75;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.REVIEW, decision);
@@ -69,7 +69,7 @@ public class FraudEngineTest
         var score = 50;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.REVIEW, decision);
@@ -83,7 +83,7 @@ public class FraudEngineTest
         var score = 25;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.ALLOW, decision);
@@ -97,7 +97,7 @@ public class FraudEngineTest
         var score = 0;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.ALLOW, decision);
@@ -111,7 +111,7 @@ public class FraudEngineTest
         var score = 1500;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.BLOCK, decision);
@@ -125,7 +125,7 @@ public class FraudEngineTest
         var score = 7;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.REVIEW, decision);
@@ -139,7 +139,7 @@ public class FraudEngineTest
         var score = 50;
 
         // Act
-        var decision = _fraudEngine.Decide(score, config);
+        var decision = FraudEngine.Decide(score, config);
 
         // Assert
         Assert.Equal(FraudDecision.BLOCK, decision);

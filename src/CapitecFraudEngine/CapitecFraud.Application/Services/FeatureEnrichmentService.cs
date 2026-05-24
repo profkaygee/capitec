@@ -1,18 +1,10 @@
 using CapitecFraud.Application.Abstractions;
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Application.Services;
 
-public class FeatureEnrichmentService
+public class FeatureEnrichmentService(IEnumerable<IFeatureProvider> providers)
 {
-    private readonly IEnumerable<IFeatureProvider> _providers;
-
-    public FeatureEnrichmentService(IEnumerable<IFeatureProvider> providers)
-    {
-        _providers = providers;
-    }
-
     public async Task<FraudEvaluationContext> BuildAsync(TransactionMessage txn)
     {
         var context = new FraudEvaluationContext
@@ -20,7 +12,7 @@ public class FeatureEnrichmentService
             Transaction = txn
         };
 
-        foreach (var provider in _providers)
+        foreach (var provider in providers)
         {
             await provider.EnrichAsync(context);
         }

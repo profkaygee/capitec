@@ -1,9 +1,9 @@
 using System.Text;
 using System.Text.Json;
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Messaging;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -19,11 +19,12 @@ public class RabbitMqTransactionQueueTest
     {
         var mockConnection = new Mock<IConnection>();
         _mockChannel = new Mock<IModel>();
+        var logger = new Mock<ILogger<RabbitMqTransactionQueue>>();
         mockConnection
             .Setup(c => c.CreateModel())
             .Returns(_mockChannel.Object);
         
-        _queue = new RabbitMqTransactionQueue(mockConnection.Object);
+        _queue = new RabbitMqTransactionQueue(mockConnection.Object, logger.Object);
     }
 
     [Fact]

@@ -1,14 +1,10 @@
 using CapitecFraud.Api.Endpoints;
 using CapitecFraud.Api.Middleware;
-using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Common.Responses;
-using CapitecFraud.Domain.Abstractions.Repositories;
 using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Infrastructure.Extensions;
-using CapitecFraud.Infrastructure.Messaging;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Realtime;
-using CapitecFraud.Infrastructure.Repositories;
 using CapitecFraud.Infrastructure.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -47,7 +43,7 @@ public class Program
             .Enrich.WithProcessId()
             .WriteTo.Console()
             .WriteTo.File(
-                path: "Logs/capitec-fraud-logs-.txt",
+                path: "Logs/capitec-api-fraud-logs-.txt",
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 14,
                 shared: true)
@@ -65,8 +61,6 @@ public class Program
         // Register the database context
         builder.Services.AddDbContext<CapitecFraudDbContext>(options =>
         {
-            Console.WriteLine("FINAL CONNECTION STRING >>> " +
-                builder.Configuration.GetConnectionString("CapitecFraudDb"));
             options.UseSqlServer(builder.Configuration.GetConnectionString("CapitecFraudDb"),
                 sqlServerOptionsAction: sqlOptions => sqlOptions.EnableRetryOnFailure());
         });
@@ -86,9 +80,7 @@ public class Program
 
             return factory.CreateConnection();
         });
-
-        builder.Services.AddScoped<ITransactionQueue, RabbitMqTransactionQueue>();
-        builder.Services.AddScoped<IRuleRepository, RuleRepository>();
+        
         builder.Services.AddFraudServices();
 
         var app = builder.Build();

@@ -1,12 +1,11 @@
-using CapitecFraud.Domain.Models;
-
-namespace CapitecFraud.Application.Models;
+namespace CapitecFraud.Domain.Models;
 
 public class FraudEvaluationContext
 {
     public TransactionMessage Transaction { get; set; }
     public string DeviceId { get; set; }
     public string IpAddress { get; set; }
+    public int IpAddressCount { get; set; }
     public int TransactionCountLast1Min { get; set; }
     public int TransactionCountLast10Min { get; set; }
     public bool IsNewDevice { get; set; }

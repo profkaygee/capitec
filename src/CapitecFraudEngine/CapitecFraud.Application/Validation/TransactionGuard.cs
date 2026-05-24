@@ -1,4 +1,3 @@
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Application.Validation;
@@ -19,7 +18,7 @@ public class TransactionGuard
         if (txn.Amount > 1_000_000)
             return GuardResult.Quarantine("Amount exceeds system limit");
 
-        if (txn.Currency != "ZAR")
+        if (txn.Currency != "ZAR" && txn.Currency != "USD" && txn.Currency != "EUR" && txn.Currency != "GBP")
             return GuardResult.Review("Foreign currency transaction");
 
         if (txn.Timestamp > DateTime.UtcNow.AddMinutes(5))
@@ -28,9 +27,8 @@ public class TransactionGuard
         if (txn.Amount > 250_000)
             return GuardResult.Review("High-value transaction");
 
-        if (txn.MerchantId.Contains("UNKNOWN"))
-            return GuardResult.Quarantine("Unknown merchant");
-
-        return GuardResult.Pass();
+        return txn.MerchantId.Contains("UNKNOWN") 
+            ? GuardResult.Quarantine("Unknown merchant") 
+            : GuardResult.Pass();
     }
 }

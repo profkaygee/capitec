@@ -1,14 +1,14 @@
 using System.Text;
 using System.Text.Json;
 using CapitecFraud.Application.Abstractions;
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Models;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace CapitecFraud.Infrastructure.Messaging;
 
-public class RabbitMqTransactionQueue(IConnection connection) : ITransactionQueue
+public class RabbitMqTransactionQueue(IConnection connection, ILogger<RabbitMqTransactionQueue> logger) : ITransactionQueue
 {
     public Task<bool> PublishAsync(TransactionMessage message)
     {
@@ -59,11 +59,12 @@ public class RabbitMqTransactionQueue(IConnection connection) : ITransactionQueu
             catch (JsonException jsonException)
             {
                 channel.BasicNack(args.DeliveryTag, false, true);
-                // Need to log the json exception
+                logger.LogError(jsonException, "Error parsing JSON message");
             }
             catch (Exception ex)
             {
                 // Log any other exceptions
+                logger.LogError(ex, "Error processing transaction message");
             }
         };
 

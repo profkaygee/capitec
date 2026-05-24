@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
 using CapitecFraud.Domain.Models;
@@ -10,7 +6,6 @@ using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
 
 public class AuditServiceTests
 {

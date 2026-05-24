@@ -3,7 +3,6 @@ using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 
 namespace CapitecFraud.Tests.RepositoryTests;
 

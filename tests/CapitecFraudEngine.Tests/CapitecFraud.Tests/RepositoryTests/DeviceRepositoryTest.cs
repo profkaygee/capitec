@@ -2,7 +2,6 @@ using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Repositories;
-using CapitecFraud.Infrastructure.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;

@@ -1,22 +1,13 @@
-using System.Reflection;
-using System.Text.Json;
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
+using CapitecFraud.Domain.Models;
 using Microsoft.Extensions.Logging;
 
 namespace CapitecFraud.Application.Engines;
 
-public class FraudEngine
+public class FraudEngine(ILogger<FraudEngine> logger)
 {
-    public readonly ILogger<FraudEngine> _logger;
-
-    public FraudEngine(ILogger<FraudEngine> logger)
-    {
-        _logger = logger;
-    }
-
-    public FraudResult Evaluate(FraudEvaluationContext fraudEvaluationContext, IList<RuleConfig> rules,FraudDecisionRuleConfig _decisionConfig)
+    public FraudResult Evaluate(FraudEvaluationContext fraudEvaluationContext, IList<RuleConfig> rules,FraudDecisionRuleConfig decisionConfig)
     {
         int score = 0;
         var flags = new List<FraudFlag>();
@@ -25,42 +16,38 @@ public class FraudEngine
         {
             if (!rule.IsActive)
             {
-                _logger.LogInformation("Current rule is inactive: {RuleName}", rule.Name);
                 continue;
             }
 
             var fieldValue = GetField(fraudEvaluationContext, rule.Field);
-            _logger.LogInformation("Evaluating rule: {RuleName} for field: {Field} with value: {FieldValue}", rule.Name, rule.Field, fieldValue);
 
-            if (Compare(fieldValue, rule))
+            if (!Compare(fieldValue, rule)) 
+                continue;
+            
+            score += rule.ActionWeight;
+
+            flags.Add(new FraudFlag
             {
-                score += rule.ActionWeight;
-                _logger.LogInformation("Rule {RuleName} triggered for field: {Field} with value: {FieldValue} and score: {Score}", rule.Name, rule.Field, fieldValue, score);
-
-                flags.Add(new FraudFlag
-                {
-                    RuleName = rule.Name,
-                    Field = rule.Field,
-                    Operator = rule.Operator,
-                    TriggerValue = rule.Value,
-                    ScoreImpact = rule.ActionWeight
-                });
-                _logger.LogInformation("Added flag: {Flag}", JsonSerializer.Serialize(flags.Last()));
-            }
+                RuleName = rule.Name,
+                Field = rule.Field,
+                Operator = rule.Operator,
+                TriggerValue = rule.Value,
+                ScoreImpact = rule.ActionWeight
+            });
         }
 
         return new FraudResult
         {
             TransactionId = fraudEvaluationContext.Transaction.TransactionId,
             RiskScore = score,
-            Decision = Decide(score, _decisionConfig),
+            Decision = Decide(score, decisionConfig),
             Flags = flags
         };
     }
 
     private object GetField(FraudEvaluationContext fraudEvaluationContext, string field)
     {
-        _logger.LogInformation("Getting field: {Field} from context", field);
+        logger.LogInformation("Getting field: {Field} from context", field);
         
         return field switch
         {
@@ -91,7 +78,7 @@ public class FraudEngine
         };
     }
 
-    private bool Compare(object fieldValue, RuleConfig rule)
+    private static bool Compare(object fieldValue, RuleConfig rule)
     {
         if (fieldValue == null) 
             return false;
@@ -106,12 +93,12 @@ public class FraudEngine
         };
     }
 
-    public FraudDecision Decide(int score,FraudDecisionRuleConfig _decisionConfig)
+    public static FraudDecision Decide(int score,FraudDecisionRuleConfig decisionConfig)
     {
-        if (score >= _decisionConfig.BlockThreshold)
+        if (score >= decisionConfig.BlockThreshold)
             return FraudDecision.BLOCK;
 
-        return score >= _decisionConfig.ReviewThreshold 
+        return score >= decisionConfig.ReviewThreshold 
             ? FraudDecision.REVIEW 
             : FraudDecision.ALLOW;
     }

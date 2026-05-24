@@ -9,16 +9,13 @@ public class GeoService : IGeoService
     public Task<double> CalculateSpeed(string accountId)
     {
         // Simulate geo velocity (km/h)
-        var speed = _rand.Next(10, 1200);
-
+        var speed = _rand.Next(10, 950);
         return Task.FromResult((double)speed);
     }
 
     public Task<bool> IsVpn(string accountId)
     {
-        // Random simulation (10% chance)
-        var isVpn = _rand.Next(0, 50) == 25;
-
+        var isVpn = _rand.Next(0, 50) > 25;
         return Task.FromResult(isVpn);
     }
 }

@@ -1,4 +1,4 @@
-using CapitecFraud.Application.Models;
+using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Application.Abstractions;
 

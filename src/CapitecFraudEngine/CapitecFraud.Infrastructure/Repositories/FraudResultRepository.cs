@@ -1,7 +1,6 @@
 using CapitecFraud.Domain.Abstractions.Repositories;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CapitecFraud.Infrastructure.Repositories;
 

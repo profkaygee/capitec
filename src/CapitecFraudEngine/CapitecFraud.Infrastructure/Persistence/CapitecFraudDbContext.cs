@@ -1,4 +1,3 @@
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Models;
 using Microsoft.EntityFrameworkCore;

@@ -1,13 +1,9 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
 
 public class FraudResultRepositoryTests
 {

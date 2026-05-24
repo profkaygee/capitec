@@ -26,7 +26,7 @@ public class AccountRepository(CapitecFraudDbContext database)
             .Where(t => t.AccountId == accountId && t.Timestamp >= last30Days)
             .ToListAsync();
 
-        if (!transactions.Any())
+        if (transactions.Count == 0)
             return 0;
 
         var avg = transactions.Average(t => t.Amount);
@@ -35,7 +35,7 @@ public class AccountRepository(CapitecFraudDbContext database)
         if (avg == 0)
             return 0;
 
-        var deviation = ((latest - avg) / avg) * 100;
+        var deviation = (latest - avg) / avg * 100;
 
         return Math.Abs(deviation);
     }

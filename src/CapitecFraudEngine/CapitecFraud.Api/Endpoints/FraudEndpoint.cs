@@ -1,8 +1,7 @@
 using CapitecFraud.Api.Common;
 using CapitecFraud.Application.Abstractions;
-using CapitecFraud.Application.Models;
 using CapitecFraud.Application.Validation;
-using CapitecFraud.Domain.Entities;
+using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Enums;
 using CapitecFraud.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -42,19 +41,40 @@ public class FraudEndpoint : ICapitecFraudEndpoint
         });
 
         // Get fraud transaction by identity
-        app.MapGet($"{prefix}/transactions/{{id}}", async () =>
+        app.MapGet($"{prefix}/transactions/{{transactionId}}", async (
+            Guid transactionId,
+            [FromServices] ITransactionRepository transactionRepository) =>
         {
+            // Get the transaction from the database
+            var transactionMessage = await transactionRepository.GetTransaction(transactionId);
 
+            return transactionMessage == null 
+                ? ApiResults.NotFound("Transaction not found") 
+                : ApiResults.Ok(transactionMessage);
         });
 
-        // Get transaction audit trail
-        app.MapGet($"{prefix}/audit/{{id}}", async () =>
+        // Get transaction audit trail for last three months (default)
+        app.MapGet($"{prefix}/audit/{{accountId}}", async (
+            string accountId,
+            DateTime? startDate,
+            DateTime? endDate,
+            [FromServices] IAuditService auditService) =>
         {
+            if (startDate == null && endDate == null)
+            {
+                //Freeze the time
+                 endDate = DateTime.Now;
 
+                // Get the audit trail from the database
+                startDate = endDate?.AddMonths(-3);
+            }
+
+            var auditTrail = await auditService.GetAuditLogsAsync(accountId, startDate, endDate);
+            return ApiResults.Ok(auditTrail);
         });
     }
 
-    private FraudDecision MapGuardAction(GuardAction action)
+    private static FraudDecision MapGuardAction(GuardAction action)
     {
         return action switch
         {

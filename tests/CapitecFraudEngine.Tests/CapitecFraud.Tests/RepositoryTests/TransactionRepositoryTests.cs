@@ -1,10 +1,8 @@
-using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Repositories;
 using CapitecFraud.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 
 namespace CapitecFraud.Tests.RepositoryTests;
 

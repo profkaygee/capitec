@@ -1,12 +1,6 @@
 using CapitecFraud.Application.Abstractions;
-using CapitecFraud.Domain.Abstractions.Repositories;
-using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Infrastructure.Extensions;
-using CapitecFraud.Infrastructure.Messaging;
 using CapitecFraud.Infrastructure.Persistence;
-using CapitecFraud.Infrastructure.Realtime;
-using CapitecFraud.Infrastructure.Repositories;
-using CapitecFraud.Infrastructure.Services;
 using CapitecFraud.Worker.Notifications;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
@@ -19,9 +13,17 @@ public class Program
     public static void Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
             .Enrich.FromLogContext()
-            .Enrich.WithProperty("Service", "FraudWorker")
+            .Enrich.WithMachineName()
+            .Enrich.WithEnvironmentName()
+            .Enrich.WithThreadId()
+            .Enrich.WithProcessId()
+            .WriteTo.Console()
+            .WriteTo.File(
+                path: "Logs/capitec-workers-fraud-logs-.txt",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 14,
+                shared: true)
             .CreateLogger();
 
         var builder = Host.CreateApplicationBuilder(args);
@@ -29,12 +31,7 @@ public class Program
         
         builder.Logging.ClearProviders();
         builder.Logging.AddSerilog(Log.Logger, dispose: true);
-
-        builder.Services.AddScoped<IAuditService, AuditService>();
-        builder.Services.AddScoped<ITransactionQueue, RabbitMqTransactionQueue>();
-        builder.Services.AddScoped<IRuleRepository, RuleRepository>();
-        builder.Services.AddScoped<IFraudResultRepository, FraudResultRepository>();
-        builder.Services.AddScoped<IAuditService, AuditService>();
+        
         builder.Services.AddScoped<IRealtimeNotifier, NoOpNotifier>();
         builder.Services.AddFraudServices();
 

@@ -1,4 +1,3 @@
-using CapitecFraud.Application.Models;
 using CapitecFraud.Application.Validation;
 using CapitecFraud.Domain.Models;
 
@@ -286,7 +285,7 @@ public class TransactionGuardTest
             Id = 1,
             AccountId = "ACC123",
             Amount = 1000,
-            Currency = "USD",
+            Currency = "XUR",
             Timestamp = DateTime.UtcNow,
             MerchantId = "MERCHANT123"
         };
@@ -321,7 +320,7 @@ public class TransactionGuardTest
     }
 
     [Fact]
-    public void Validate_WithEURCurrency_ReturnsReview()
+    public void Validate_WithJPYCurrency_ReturnsReview()
     {
         // Arrange
         var txn = new TransactionMessage
@@ -329,7 +328,7 @@ public class TransactionGuardTest
             Id = 1,
             AccountId = "ACC123",
             Amount = 1000,
-            Currency = "EUR",
+            Currency = "JPY",
             Timestamp = DateTime.UtcNow,
             MerchantId = "MERCHANT123"
         };
