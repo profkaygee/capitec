@@ -11,8 +11,10 @@ public class FraudResult
     public int RiskScore { get; set; }
 
     public FraudDecision Decision { get; set; }
-    
+
     public string Reason { get; set; } = string.Empty;
 
     public IList<FraudFlag> Flags { get; set; } = new List<FraudFlag>();
+    
+    public DateTime ResultDate { get; set; } = DateTime.UtcNow;
 }
