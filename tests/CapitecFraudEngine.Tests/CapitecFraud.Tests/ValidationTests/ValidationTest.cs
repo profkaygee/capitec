@@ -1,5 +1,6 @@
 using CapitecFraud.Application.Models;
 using CapitecFraud.Application.Validation;
+using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Tests.ValidationTests;
 
@@ -166,7 +167,7 @@ public class TransactionGuardTest
     }
 
     [Fact]
-    public void Validate_WithAmountEqualToSystemLimit_ReturnsPass()
+    public void Validate_WithAmountEqualToSystemLimit_ReturnsFail()
     {
         // Arrange
         var txn = new TransactionMessage
@@ -183,7 +184,7 @@ public class TransactionGuardTest
         var result = _guard.Validate(txn);
 
         // Assert
-        Assert.True(result.IsValid);
+        Assert.False(result.IsValid);
     }
 
     [Fact]

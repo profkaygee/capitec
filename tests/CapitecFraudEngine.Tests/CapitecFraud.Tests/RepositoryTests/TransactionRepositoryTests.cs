@@ -1,12 +1,12 @@
 using CapitecFraud.Application.Models;
-using Xunit;
-using Moq;
-using Microsoft.EntityFrameworkCore;
-using CapitecFraud.Infrastructure.Repositories;
+using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
-using CapitecFraud.Domain.Entities;
+using CapitecFraud.Infrastructure.Repositories;
+using CapitecFraud.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Moq;
 
-namespace CapitecFraud.Infrastructure.Tests.Repositories;
+namespace CapitecFraud.Tests.RepositoryTests;
 
 public class TransactionRepositoryTests
 {
@@ -14,12 +14,18 @@ public class TransactionRepositoryTests
     public async Task CountTransactions_WithNonExistentAccount_ReturnsZero()
     {
         // Arrange
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        var mockTransactionSet = new Mock<DbSet<TransactionMessage>>();
-        var queryable = new List<TransactionMessage>().AsQueryable().BuildMockDbSet();
-        
-        mockContext.Setup(c => c.Transactions).Returns(queryable.Object);
-        var repository = new TransactionRepository(mockContext.Object);
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+
+        var clock = new ClockService()
+        {
+            UtcNow = DateTime.Now
+        };
+        var repository = new TransactionRepository(context, clock);
+
         var timeWindow = TimeSpan.FromHours(1);
 
         // Act
@@ -33,11 +39,17 @@ public class TransactionRepositoryTests
     public async Task CountTransactions_WithNoTransactions_ReturnsZero()
     {
         // Arrange
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        var transactions = new List<TransactionMessage>().AsQueryable().BuildMockDbSet();
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+        var clock = new ClockService()
+        {
+            UtcNow = DateTime.Now
+        };
         
-        mockContext.Setup(c => c.Transactions).Returns(transactions.Object);
-        var repository = new TransactionRepository(mockContext.Object);
+        var repository = new TransactionRepository(context,clock);
         var timeWindow = TimeSpan.FromHours(1);
 
         // Act
@@ -51,20 +63,29 @@ public class TransactionRepositoryTests
     public async Task CountTransactions_WithTransactionsWithinWindow_ReturnsCount()
     {
         // Arrange
-        var now = DateTime.UtcNow;
-        var transactions = new List<TransactionMessage>
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+        var clock = new ClockService()
         {
+            UtcNow = DateTime.Now
+        };
+
+        var now = clock.UtcNow;
+
+        context.Transactions.AddRange(
             new TransactionMessage { AccountId = "account-123", Timestamp = now.AddMinutes(-30) },
             new TransactionMessage { AccountId = "account-123", Timestamp = now.AddMinutes(-15) }
-        }.AsQueryable().BuildMockDbSet();
-        
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        mockContext.Setup(c => c.Transactions).Returns(transactions.Object);
-        var repository = new TransactionRepository(mockContext.Object);
-        var timeWindow = TimeSpan.FromHours(1);
+        );
+
+        await context.SaveChangesAsync();
+
+        var repository = new TransactionRepository(context, clock);
 
         // Act
-        var result = await repository.CountTransactions("account-123", timeWindow);
+        var result = await repository.CountTransactions("account-123", TimeSpan.FromHours(1));
 
         // Assert
         Assert.Equal(2, result);
@@ -74,16 +95,27 @@ public class TransactionRepositoryTests
     public async Task CountTransactions_WithTransactionsOutsideWindow_ReturnsZero()
     {
         // Arrange
-        var now = DateTime.UtcNow;
-        var transactions = new List<TransactionMessage>
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+        var clock = new ClockService()
         {
+            UtcNow = DateTime.Now
+        };
+
+        var now = DateTime.UtcNow;
+
+        context.Transactions.AddRange(
             new TransactionMessage { AccountId = "account-123", Timestamp = now.AddHours(-2) },
             new TransactionMessage { AccountId = "account-123", Timestamp = now.AddHours(-3) }
-        }.AsQueryable().BuildMockDbSet();
-        
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        mockContext.Setup(c => c.Transactions).Returns(transactions.Object);
-        var repository = new TransactionRepository(mockContext.Object);
+        );
+
+        await context.SaveChangesAsync();
+
+        var repository = new TransactionRepository(context,clock);
+
         var timeWindow = TimeSpan.FromHours(1);
 
         // Act
@@ -97,17 +129,28 @@ public class TransactionRepositoryTests
     public async Task CountTransactions_WithMixedTransactions_CountsOnlyWithinWindow()
     {
         // Arrange
-        var now = DateTime.UtcNow;
-        var transactions = new List<TransactionMessage>
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+        var clock = new ClockService
         {
-            new TransactionMessage { AccountId = "account-123", Timestamp = now.AddMinutes(-30) },  // within
-            new TransactionMessage { AccountId = "account-123", Timestamp = now.AddMinutes(-20) },  // within
-            new TransactionMessage { AccountId = "account-123", Timestamp = now.AddHours(-2) }      // outside
-        }.AsQueryable().BuildMockDbSet();
+            UtcNow = DateTime.Now
+        };
+
+        var now = clock.UtcNow;
+
+        context.Transactions.AddRange(
+            new TransactionMessage { AccountId = "account-123", Timestamp = now.AddMinutes(-30) },
+            new TransactionMessage { AccountId = "account-123", Timestamp = now.AddMinutes(-20) },
+            new TransactionMessage { AccountId = "account-123", Timestamp = now.AddHours(-2) }
+        );
+
+        await context.SaveChangesAsync();
         
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        mockContext.Setup(c => c.Transactions).Returns(transactions.Object);
-        var repository = new TransactionRepository(mockContext.Object);
+        var repository = new TransactionRepository(context, clock);
+
         var timeWindow = TimeSpan.FromHours(1);
 
         // Act
@@ -121,19 +164,31 @@ public class TransactionRepositoryTests
     public async Task CountTransactions_WithTransactionAtWindowBoundary_IncludesTransaction()
     {
         // Arrange
-        var now = DateTime.UtcNow;
-        var timeWindow = TimeSpan.FromHours(1);
-        var boundaryTime = now.Subtract(timeWindow);
-        
-        var transactions = new List<TransactionMessage>
+        var fixedNow = new DateTime(2026, 01, 01, 12, 00, 00);
+
+        var clock = new ClockService()
         {
-            new TransactionMessage { AccountId = "account-123", Timestamp = boundaryTime },
-            new TransactionMessage { AccountId = "account-123", Timestamp = now.AddMinutes(-30) }
-        }.AsQueryable().BuildMockDbSet();
-        
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        mockContext.Setup(c => c.Transactions).Returns(transactions.Object);
-        var repository = new TransactionRepository(mockContext.Object);
+            UtcNow = fixedNow
+        };
+
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+
+        var repository = new TransactionRepository(context, clock);
+
+        var timeWindow = TimeSpan.FromHours(2);
+
+        var boundary = fixedNow.Subtract(timeWindow);
+
+        context.Transactions.AddRange(
+            new TransactionMessage { AccountId = "account-123", Timestamp = boundary },
+            new TransactionMessage { AccountId = "account-123", Timestamp = fixedNow.AddMinutes(-30) }
+        );
+
+        await context.SaveChangesAsync();
 
         // Act
         var result = await repository.CountTransactions("account-123", timeWindow);
@@ -146,16 +201,35 @@ public class TransactionRepositoryTests
     public async Task CountTransactions_FiltersOnlyByAccountId()
     {
         // Arrange
-        var now = DateTime.UtcNow;
-        var transactions = new List<TransactionMessage>
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+        var clock = new ClockService()
         {
-            new TransactionMessage() { AccountId = "account-123", Timestamp = now.AddMinutes(-30) },
-            new TransactionMessage() { AccountId = "account-456", Timestamp = now.AddMinutes(-20) }
-        }.AsQueryable().BuildMockDbSet();
+            UtcNow = DateTime.Now
+        };
+
+        var now = clock.UtcNow;
+
+        context.Transactions.AddRange(
+            new TransactionMessage
+            {
+                AccountId = "account-123",
+                Timestamp = now.AddMinutes(-30)
+            },
+            new TransactionMessage
+            {
+                AccountId = "account-123",
+                Timestamp = now.AddHours(-3)
+            }
+        );
+
+        await context.SaveChangesAsync();
         
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        mockContext.Setup(c => c.Transactions).Returns(transactions.Object);
-        var repository = new TransactionRepository(mockContext.Object);
+        var repository = new TransactionRepository(context,clock);
+
         var timeWindow = TimeSpan.FromHours(1);
 
         // Act

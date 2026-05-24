@@ -4,6 +4,7 @@ using CapitecFraud.Application.Models;
 using CapitecFraud.Application.Validation;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
+using CapitecFraud.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CapitecFraud.Api.Endpoints;

@@ -1,4 +1,5 @@
 using CapitecFraud.Application.Abstractions;
+using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Services;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CapitecFraud.Infrastructure.Repositories;
 
-public class DeviceRepository(CapitecFraudDbContext database, DeviceFingerprintService fingerprintService) 
+public class DeviceRepository(CapitecFraudDbContext database, IDeviceFingerprintService fingerprintService) 
 : IDeviceRepository
 {
     public async Task<string> GetDeviceId(string accountId)

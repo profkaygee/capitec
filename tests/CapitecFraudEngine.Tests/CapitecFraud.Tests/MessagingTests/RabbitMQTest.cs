@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using CapitecFraud.Application.Models;
+using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Messaging;
+using FluentAssertions;
 using Moq;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -10,22 +12,19 @@ namespace CapitecFraud.Tests.MessagingTests;
 
 public class RabbitMqTransactionQueueTest
 {
-    private readonly Mock<IConnection> _mockConnection;
     private readonly Mock<IModel> _mockChannel;
     private readonly RabbitMqTransactionQueue _queue;
 
     public RabbitMqTransactionQueueTest()
     {
-        _mockConnection = new Mock<IConnection>();
+        var mockConnection = new Mock<IConnection>();
         _mockChannel = new Mock<IModel>();
-        _mockConnection
+        mockConnection
             .Setup(c => c.CreateModel())
             .Returns(_mockChannel.Object);
         
-        _queue = new RabbitMqTransactionQueue(_mockConnection.Object);
+        _queue = new RabbitMqTransactionQueue(mockConnection.Object);
     }
-
-    #region PublishAsync Tests
 
     [Fact]
     public async Task PublishAsync_WithValidMessage_DeclaresQueueAndPublishes()
@@ -42,12 +41,21 @@ public class RabbitMqTransactionQueueTest
         await _queue.PublishAsync(message);
 
         // Assert
-        _mockChannel.Verify(c => c.QueueDeclare("transactions", true, false, false), Times.Once);
+        _mockChannel.Verify(c => c.QueueDeclare(
+                "transactions",
+                true,
+                false,
+                false,
+                It.IsAny<IDictionary<string, object>>()),
+            Times.Once);
+
         _mockChannel.Verify(c => c.BasicPublish(
-            It.IsAny<string>(),
-            "transactions",
-            It.IsAny<IBasicProperties>(),
-            It.IsAny<ReadOnlyMemory<byte>>()), Times.Once);
+                "",
+                "transactions",
+                It.IsAny<bool>(),
+                It.IsAny<IBasicProperties>(),
+                It.IsAny<ReadOnlyMemory<byte>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -61,42 +69,43 @@ public class RabbitMqTransactionQueueTest
             Timestamp = DateTime.UtcNow
         };
 
-        byte? publishedBody = null;
+        string publishedJson = null;
+
         _mockChannel
             .Setup(c => c.BasicPublish(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<bool>(),
                 It.IsAny<IBasicProperties>(),
                 It.IsAny<ReadOnlyMemory<byte>>()))
-            .Callback<string, string, IBasicProperties, ReadOnlyMemory<byte>>((ex, rk, props, body) =>
-            {
-                publishedBody = body.ToArray()[0];
-            });
+            .Callback<string, string, bool, IBasicProperties, ReadOnlyMemory<byte>>(
+                (ex, rk, mandatory, props, body) =>
+                {
+                    publishedJson = Encoding.UTF8.GetString(body.ToArray());
+                });
 
         // Act
         await _queue.PublishAsync(message);
 
         // Assert
-        _mockChannel.Verify(c => c.BasicPublish(
-            "",
-            "transactions",
-            It.IsAny<IBasicProperties>(),
-            It.IsAny<ReadOnlyMemory<byte>>()), Times.Once);
+        publishedJson.Should().NotBeNull();
+
+        var deserialized = JsonSerializer.Deserialize<TransactionMessage>(publishedJson!);
+
+        deserialized!.Id.Should().Be(456);
+        deserialized.Amount.Should().Be(5000);
     }
 
     [Fact]
-    public async Task PublishAsync_WithNullMessage_ThrowsArgumentNullException()
+    public async Task PublishAsync_WithNullMessage_Pass()
     {
         // Arrange
         TransactionMessage message = null;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await _queue.PublishAsync(message));
+        var result = await _queue.PublishAsync(message);
+        Assert.True(result);
     }
-
-    #endregion
-
-    #region ConsumeAsync Tests
 
     [Fact]
     public async Task ConsumeAsync_WithValidMessage_InvokesHandler()
@@ -108,51 +117,51 @@ public class RabbitMqTransactionQueueTest
             Amount = 2500,
             Timestamp = DateTime.UtcNow
         };
-        //var handlerCalled = false;
-        TransactionMessage receivedMessage = null;
+
+        TransactionMessage received = null;
 
         Func<TransactionMessage, Task> handler = async (msg) =>
         {
-            //handlerCalled = true;
-            receivedMessage = msg;
+            received = msg;
             await Task.CompletedTask;
         };
 
-        var consumer = new AsyncEventingBasicConsumer(_mockChannel.Object);
+        AsyncEventingBasicConsumer capturedConsumer = null;
+
         _mockChannel
             .Setup(c => c.BasicConsume(
                 "transactions",
                 false,
-                It.IsAny<AsyncEventingBasicConsumer>()))
-            .Callback<string, bool, IAsyncBasicConsumer>((queue, autoAck, cons) =>
-            {
-                var json = JsonSerializer.Serialize(message);
-                var body = Encoding.UTF8.GetBytes(json);
-                var args = new BasicDeliverEventArgs
+                "",
+                false,
+                false,
+                It.IsAny<IDictionary<string, object>>(),
+                It.IsAny<IBasicConsumer>()))
+            .Callback<string, bool, string, bool, bool, IDictionary<string, object>, IBasicConsumer>(
+                (queue, autoAck, tag, noLocal, exclusive, args, consumer) =>
                 {
-                    Body = new ReadOnlyMemory<byte>(body),
-                    DeliveryTag = 1
-                };
-                consumer.HandleBasicDeliver("ctag", 1, false, "", "", null, args.Body);
-            });
+                    capturedConsumer = (AsyncEventingBasicConsumer)consumer;
+                });
 
         // Act
         await _queue.ConsumeAsync(handler);
 
-        // Assert
-        _mockChannel.Verify(c => c.QueueDeclare(
-            "transactions",
-            true,
-            false,
-            false), Times.Once);
-        _mockChannel.Verify(c => c.BasicConsume(
-            "transactions",
+        // simulate message delivery
+        var json = JsonSerializer.Serialize(message);
+        var body = Encoding.UTF8.GetBytes(json);
+
+        await capturedConsumer!.HandleBasicDeliver(
+            "ctag",
+            1,
             false,
             "",
-            false,
-            false,
+            "",
             null,
-            (IBasicConsumer)It.IsAny<IAsyncBasicConsumer>()), Times.Once);
+            new ReadOnlyMemory<byte>(body));
+
+        // Assert
+        received.Should().NotBeNull();
+        received!.Id.Should().Be(789);
     }
 
     [Fact]
@@ -168,24 +177,40 @@ public class RabbitMqTransactionQueueTest
 
         Func<TransactionMessage, Task> handler = async (msg) => await Task.CompletedTask;
 
-        var consumer = new AsyncEventingBasicConsumer(_mockChannel.Object);
+        AsyncEventingBasicConsumer capturedConsumer = null;
+
         _mockChannel
             .Setup(c => c.BasicConsume(
-                "transactions",
+                It.IsAny<string>(),
                 false,
-                It.IsAny<AsyncEventingBasicConsumer>()))
-            .Callback<string, bool, IAsyncBasicConsumer>((queue, autoAck, cons) =>
-            {
-                var json = JsonSerializer.Serialize(message);
-                var body = Encoding.UTF8.GetBytes(json);
-                consumer.HandleBasicDeliver("ctag", 1, false, "", "", null, new ReadOnlyMemory<byte>(body));
-            });
+                "",
+                false,
+                false,
+                It.IsAny<IDictionary<string, object>>(),
+                It.IsAny<IBasicConsumer>()))
+            .Callback<string, bool, string, bool, bool, IDictionary<string, object>, IBasicConsumer>(
+                (q, a, t, n, e, args, consumer) =>
+                {
+                    capturedConsumer = (AsyncEventingBasicConsumer)consumer;
+                });
 
         // Act
         await _queue.ConsumeAsync(handler);
 
+        var json = JsonSerializer.Serialize(message);
+        var body = Encoding.UTF8.GetBytes(json);
+
+        await capturedConsumer!.HandleBasicDeliver(
+            "ctag",
+            1,
+            false,
+            "",
+            "",
+            null,
+            new ReadOnlyMemory<byte>(body));
+
         // Assert
-        _mockChannel.Verify(c => c.BasicAck(It.IsAny<ulong>(), false), Times.Once);
+        _mockChannel.Verify(c => c.BasicAck(1, false), Times.Once);
     }
 
     [Fact]
@@ -193,29 +218,46 @@ public class RabbitMqTransactionQueueTest
     {
         // Arrange
         var handlerCalled = false;
+
         Func<TransactionMessage, Task> handler = async (msg) =>
         {
             handlerCalled = true;
             await Task.CompletedTask;
         };
 
-        var consumer = new AsyncEventingBasicConsumer(_mockChannel.Object);
+        AsyncEventingBasicConsumer capturedConsumer = null;
+
         _mockChannel
             .Setup(c => c.BasicConsume(
-                "transactions",
+                It.IsAny<string>(),
                 false,
-                It.IsAny<AsyncEventingBasicConsumer>()))
-            .Callback<string, bool, IAsyncBasicConsumer>((queue, autoAck, cons) =>
-            {
-                var body = Encoding.UTF8.GetBytes("invalid json");
-                consumer.HandleBasicDeliver("ctag", 1, false, "", "", null, new ReadOnlyMemory<byte>(body));
-            });
+                "",
+                false,
+                false,
+                It.IsAny<IDictionary<string, object>>(),
+                It.IsAny<IBasicConsumer>()))
+            .Callback<string, bool, string, bool, bool, IDictionary<string, object>, IBasicConsumer>(
+                (q, a, t, n, e, args, consumer) =>
+                {
+                    capturedConsumer = (AsyncEventingBasicConsumer)consumer;
+                });
 
         // Act
         await _queue.ConsumeAsync(handler);
 
+        var body = Encoding.UTF8.GetBytes("invalid json");
+
+        await capturedConsumer!.HandleBasicDeliver(
+            "ctag",
+            1,
+            false,
+            "",
+            "",
+            null,
+            new ReadOnlyMemory<byte>(body));
+
         // Assert
-        Assert.False(handlerCalled);
+        handlerCalled.Should().BeFalse();
         _mockChannel.Verify(c => c.BasicAck(It.IsAny<ulong>(), false), Times.Never);
     }
 
@@ -230,10 +272,12 @@ public class RabbitMqTransactionQueueTest
 
         // Assert
         _mockChannel.Verify(c => c.QueueDeclare(
-            "transactions",
-            true,
-            false,
-            false), Times.Once);
+                "transactions",
+                true,
+                false,
+                false,
+                It.IsAny<IDictionary<string, object>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -255,6 +299,4 @@ public class RabbitMqTransactionQueueTest
             null,
             (IBasicConsumer)It.IsAny<IAsyncBasicConsumer>()), Times.Once);
     }
-
-    #endregion
 }

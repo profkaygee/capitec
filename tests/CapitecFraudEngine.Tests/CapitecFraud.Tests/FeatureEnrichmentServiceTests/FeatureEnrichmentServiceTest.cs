@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using CapitecFraud.Application.Abstractions;
 using CapitecFraud.Application.Models;
 using CapitecFraud.Application.Services;
+using CapitecFraud.Domain.Models;
 using FluentAssertions;
 using Moq;
 using Xunit;

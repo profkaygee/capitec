@@ -1,5 +1,6 @@
 using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Entities;
+using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Domain.Abstractions.Services;
 

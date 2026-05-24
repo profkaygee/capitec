@@ -1,3 +1,4 @@
+using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Repositories;
@@ -21,7 +22,7 @@ public class DeviceRepositoryTests
 
     private DeviceRepository CreateRepo(
         CapitecFraudDbContext context,
-        Mock<DeviceFingerprintService> fingerprintMock)
+        Mock<IDeviceFingerprintService> fingerprintMock)
         => new DeviceRepository(context, fingerprintMock.Object);
     
     [Fact]
@@ -30,14 +31,14 @@ public class DeviceRepositoryTests
         // Arrange
         var context = CreateContext();
 
-        var fingerprintMock = new Mock<DeviceFingerprintService>();
+        var fingerprintMock = new Mock<IDeviceFingerprintService>();
         fingerprintMock
             .Setup(f => f.Generate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns("FP-123");
 
         var repo = CreateRepo(context, fingerprintMock);
 
-        var accountId = "ACC1";
+        var accountId = "10013115168";
 
         // Act
         var deviceId = await repo.GetDeviceId(accountId);
@@ -61,7 +62,7 @@ public class DeviceRepositoryTests
         // Arrange
         var context = CreateContext();
 
-        var fingerprintMock = new Mock<DeviceFingerprintService>();
+        var fingerprintMock = new Mock<IDeviceFingerprintService>();
         fingerprintMock
             .Setup(f => f.Generate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns("FP-EXISTING");
@@ -95,7 +96,7 @@ public class DeviceRepositoryTests
         // Arrange
         var context = CreateContext();
 
-        var fingerprintMock = new Mock<DeviceFingerprintService>();
+        var fingerprintMock = new Mock<IDeviceFingerprintService>();
         fingerprintMock
             .Setup(f => f.Generate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns("FP-999");
@@ -139,7 +140,7 @@ public class DeviceRepositoryTests
     {
         // Arrange
         var context = CreateContext();
-        var repo = CreateRepo(context, new Mock<DeviceFingerprintService>());
+        var repo = CreateRepo(context, new Mock<IDeviceFingerprintService>());
 
         // Act
         var result = await repo.IsNewDevice("NON_EXISTENT");
@@ -172,7 +173,7 @@ public class DeviceRepositoryTests
 
         await context.SaveChangesAsync();
 
-        var repo = CreateRepo(context, new Mock<DeviceFingerprintService>());
+        var repo = CreateRepo(context, new Mock<IDeviceFingerprintService>());
 
         // Act
         var result = await repo.IsNewDevice("DEV1");
@@ -207,7 +208,7 @@ public class DeviceRepositoryTests
 
         await context.SaveChangesAsync();
 
-        var repo = CreateRepo(context, new Mock<DeviceFingerprintService>());
+        var repo = CreateRepo(context, new Mock<IDeviceFingerprintService>());
 
         // Act
         var result = await repo.CountAccountsUsingDevice("DEV1");

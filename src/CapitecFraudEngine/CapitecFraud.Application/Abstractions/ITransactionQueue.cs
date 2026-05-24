@@ -1,9 +1,9 @@
-using CapitecFraud.Application.Models;
+using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Application.Abstractions;
 
 public interface ITransactionQueue
 {
     Task ConsumeAsync(Func<TransactionMessage, Task> handler);
-    Task PublishAsync(TransactionMessage message);
+    Task<bool> PublishAsync(TransactionMessage message);
 }

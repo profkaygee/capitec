@@ -2,6 +2,7 @@ using System.Text.Json;
 using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Entities;
+using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
 
 namespace CapitecFraud.Infrastructure.Services;

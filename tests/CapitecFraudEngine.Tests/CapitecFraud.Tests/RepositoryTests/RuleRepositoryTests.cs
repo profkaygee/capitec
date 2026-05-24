@@ -1,11 +1,11 @@
-using Xunit;
-using Moq;
-using Microsoft.EntityFrameworkCore;
-using CapitecFraud.Infrastructure.Repositories;
-using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Domain.Entities;
+using CapitecFraud.Infrastructure.Persistence;
+using CapitecFraud.Infrastructure.Repositories;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Moq;
 
-namespace CapitecFraud.Infrastructure.Tests.Repositories;
+namespace CapitecFraud.Tests.RepositoryTests;
 
 public class RuleRepositoryTests
 {
@@ -13,22 +13,23 @@ public class RuleRepositoryTests
     public async Task GetDecisionConfigAsync_WithExistingConfig_ReturnsConfig()
     {
         // Arrange
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        var mockConfigSet = new Mock<DbSet<FraudDecisionRuleConfig>>();
-        
-        var config = new FraudDecisionRuleConfig 
-        { 
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+
+        context.FraudDecisionRuleConfigs.Add(new FraudDecisionRuleConfig
+        {
             Id = 1,
             BlockThreshold = 80,
-            ReviewThreshold = 50
-        };
-        
-        mockConfigSet
-            .Setup(m => m.FirstOrDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(config);
-        
-        mockContext.Setup(c => c.FraudDecisionRuleConfigs).Returns(mockConfigSet.Object);
-        var repository = new RuleRepository(mockContext.Object);
+            ReviewThreshold = 50,
+            Name = "Default"
+        });
+
+        await context.SaveChangesAsync();
+
+        var repository = new RuleRepository(context);
 
         // Act
         var result = await repository.GetDecisionConfigAsync();
@@ -43,15 +44,13 @@ public class RuleRepositoryTests
     public async Task GetDecisionConfigAsync_WithNoConfig_ReturnsNull()
     {
         // Arrange
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        var mockConfigSet = new Mock<DbSet<FraudDecisionRuleConfig>>();
-        
-        mockConfigSet
-            .Setup(m => m.FirstOrDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync((FraudDecisionRuleConfig)null);
-        
-        mockContext.Setup(c => c.FraudDecisionRuleConfigs).Returns(mockConfigSet.Object);
-        var repository = new RuleRepository(mockContext.Object);
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+
+        var repository = new RuleRepository(context);
 
         // Act
         var result = await repository.GetDecisionConfigAsync();
@@ -64,50 +63,70 @@ public class RuleRepositoryTests
     public async Task GetDecisionConfigAsync_WithMultipleConfigs_ReturnsFirst()
     {
         // Arrange
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        var mockConfigSet = new Mock<DbSet<FraudDecisionRuleConfig>>();
-        
-        var config = new FraudDecisionRuleConfig 
-        { 
-            Id = 1,
-            BlockThreshold = 90,
-            ReviewThreshold = 60
-        };
-        
-        mockConfigSet
-            .Setup(m => m.FirstOrDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(config);
-        
-        mockContext.Setup(c => c.FraudDecisionRuleConfigs).Returns(mockConfigSet.Object);
-        var repository = new RuleRepository(mockContext.Object);
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+
+        context.FraudDecisionRuleConfigs.AddRange(
+            new FraudDecisionRuleConfig
+            {
+                Id = 1,
+                BlockThreshold = 90,
+                ReviewThreshold = 60,
+                Name = "Config-1"
+            },
+            new FraudDecisionRuleConfig
+            {
+                Id = 2,
+                BlockThreshold = 70,
+                ReviewThreshold = 40,
+                Name = "Config-2"
+            }
+        );
+
+        await context.SaveChangesAsync();
+
+        var repository = new RuleRepository(context);
 
         // Act
         var result = await repository.GetDecisionConfigAsync();
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(1, result.Id);
+        Assert.Equal(1, result!.Id);              // first inserted
         Assert.Equal(90, result.BlockThreshold);
+        Assert.Equal(60, result.ReviewThreshold);
     }
 
     [Fact]
-    public async Task GetDecisionConfigAsync_CallsFirstOrDefaultAsync()
+    public async Task GetDecisionConfigAsync_Returns_Config()
     {
         // Arrange
-        var mockContext = new Mock<CapitecFraudDbContext>();
-        var mockConfigSet = new Mock<DbSet<FraudDecisionRuleConfig>>();
-        
-        mockConfigSet
-            .Setup(m => m.FirstOrDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FraudDecisionRuleConfig());
-        
-        mockContext.Setup(c => c.FraudDecisionRuleConfigs).Returns(mockConfigSet.Object);
-        var repository = new RuleRepository(mockContext.Object);
+        var options = new DbContextOptionsBuilder<CapitecFraudDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        var context = new CapitecFraudDbContext(options);
+
+        context.FraudDecisionRuleConfigs.Add(new FraudDecisionRuleConfig
+        {
+            Id = 1,
+            Name = "Default",
+            ReviewThreshold = 50,
+            BlockThreshold = 80
+        });
+
+        await context.SaveChangesAsync();
+
+        var repository = new RuleRepository(context);
 
         // Act
-        await repository.GetDecisionConfigAsync();
+        var result = await repository.GetDecisionConfigAsync();
 
         // Assert
-        mockConfigSet.Verify(m => m.FirstOrDefaultAsync(It.IsAny<CancellationToken>()), Times.Once);
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Default");
     }
 }

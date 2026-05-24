@@ -8,6 +8,7 @@ using CapitecFraud.Domain.Abstractions.Repositories;
 using CapitecFraud.Domain.Abstractions.Services;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
+using CapitecFraud.Domain.Models;
 
 namespace CapitecFraud.Worker;
 

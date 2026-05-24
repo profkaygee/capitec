@@ -1,9 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
+using CapitecFraud.Domain.Abstractions.Services;
 
 namespace CapitecFraud.Infrastructure.Services;
 
-public class DeviceFingerprintService
+public class DeviceFingerprintService: IDeviceFingerprintService
 {
     public string Generate(string accountId, string ipAddress, string userAgent = "")
     {

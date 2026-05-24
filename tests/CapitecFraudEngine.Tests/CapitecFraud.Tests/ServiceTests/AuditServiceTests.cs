@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CapitecFraud.Application.Models;
 using CapitecFraud.Domain.Entities;
 using CapitecFraud.Domain.Enums;
+using CapitecFraud.Domain.Models;
 using CapitecFraud.Infrastructure.Persistence;
 using CapitecFraud.Infrastructure.Services;
 using FluentAssertions;

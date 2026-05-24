@@ -1,4 +1,4 @@
-namespace CapitecFraud.Application.Models;
+namespace CapitecFraud.Domain.Models;
 
 public class TransactionMessage
 {

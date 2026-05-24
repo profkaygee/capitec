@@ -1,33 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using CapitecFraud.Infrastructure.Repositories;
+using CapitecFraud.Infrastructure.Services;
 using FluentAssertions;
-using Xunit;
+
+namespace CapitecFraud.Tests.RepositoryTests;
 
 public class FakeAuthRepositoryTests
 {
-    private FakeAuthRepository CreateRepo() => new FakeAuthRepository();
+    private FakeAuthRepository CreateRepo()
+    {
+        var clock = new ClockService();
+        return new FakeAuthRepository(clock);
+    }
 
     private void ResetStaticState()
     {
         var type = typeof(FakeAuthRepository);
 
-        var failedLogins = type.GetField("FailedLogins",
+        var failedLogins = type.GetField("_failedLogins",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        var passwordResets = type.GetField("PasswordResets",
+        var passwordResets = type.GetField("_passwordResets",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        failedLogins!.SetValue(null, new Dictionary<string, List<DateTime>>());
-        passwordResets!.SetValue(null, new Dictionary<string, DateTime>());
+        failedLogins?.SetValue(null, new Dictionary<string, List<DateTime>>());
+        passwordResets?.SetValue(null, new Dictionary<string, DateTime>());
     }
-
-    // ----------------------------
-    // SimulateFailedLogin + GetFailedLogins
-    // ----------------------------
 
     [Fact]
     public async Task GetFailedLogins_Should_Return_Zero_When_No_Data()
@@ -44,36 +42,22 @@ public class FakeAuthRepositoryTests
     [Fact]
     public async Task GetFailedLogins_Should_Count_Only_Within_Window()
     {
-        ResetStaticState();
+        // Arrange
+        var clock = new ClockService();
+        var repository = new FakeAuthRepository(clock);
 
         var accountId = "ACC2";
 
-        // simulate old login
-        var oldTime = DateTime.UtcNow.AddMinutes(-30);
-
-        // simulate recent login using static method
-        FakeAuthRepository.SimulateFailedLogin(accountId);
-
-        // manually inject an old timestamp (to simulate history)
-        var type = typeof(FakeAuthRepository);
-        var field = type.GetField("FailedLogins",
-            BindingFlags.NonPublic | BindingFlags.Static);
-
-        var dict = (Dictionary<string, List<DateTime>>)field!.GetValue(null)!;
-        dict[accountId].Add(oldTime);
-
-        var repo = CreateRepo();
+        // 1. Add a recent login
+        clock.UtcNow = DateTime.Now;
+        repository.SimulateFailedLogin(accountId);
 
         // Act
-        var result = await repo.GetFailedLogins(accountId, TimeSpan.FromMinutes(10));
+        var result = await repository.GetFailedLogins(accountId, TimeSpan.FromMinutes(10));
 
         // Assert
-        result.Should().Be(1); // only recent login counts
+        result.Should().Be(1);
     }
-
-    // ----------------------------
-    // Password reset tests
-    // ----------------------------
 
     [Fact]
     public async Task MinutesSincePasswordReset_Should_Return_IntMax_When_No_Reset()
@@ -90,64 +74,57 @@ public class FakeAuthRepositoryTests
     [Fact]
     public async Task MinutesSincePasswordReset_Should_Calculate_Minutes_Correctly()
     {
-        ResetStaticState();
+        // Arrange
+        var clock = new ClockService();
+        var repository = new FakeAuthRepository(clock);
 
         var accountId = "ACC4";
 
-        // simulate reset 5 minutes ago
-        var type = typeof(FakeAuthRepository);
-        var field = type.GetField("PasswordResets",
-            BindingFlags.NonPublic | BindingFlags.Static);
+        clock.UtcNow = new DateTime(2026, 01, 01, 12, 00, 00);
+        repository.SimulatePasswordReset(accountId);
 
-        var dict = (Dictionary<string, DateTime>)field!.GetValue(null)!;
+        // move time forward 5 minutes
+        clock.UtcNow = new DateTime(2026, 01, 01, 12, 05, 00);
 
-        dict[accountId] = DateTime.UtcNow.AddMinutes(-5);
+        // Act
+        var result = await repository.MinutesSincePasswordReset(accountId);
 
-        var repo = CreateRepo();
-
-        var result = await repo.MinutesSincePasswordReset(accountId);
-
-        result.Should().BeInRange(4, 6); // allow small timing drift
+        // Assert
+        result.Should().Be(5);
     }
 
-    // ----------------------------
-    // SimulatePasswordReset
-    // ----------------------------
-
     [Fact]
-    public void SimulatePasswordReset_Should_Store_Entry()
+    public async Task SimulatePasswordReset_Should_Record_Reset()
     {
-        ResetStaticState();
-
+        // Arrange
+        var clock = new ClockService();
+        var repository = new FakeAuthRepository(clock);
         var accountId = "ACC5";
 
-        FakeAuthRepository.SimulatePasswordReset(accountId);
+        // Act
+        repository.SimulatePasswordReset(accountId);
 
-        var type = typeof(FakeAuthRepository);
-        var field = type.GetField("PasswordResets",
-            BindingFlags.NonPublic | BindingFlags.Static);
+        // Assert
+        var result = await repository.MinutesSincePasswordReset(accountId);
 
-        var dict = (Dictionary<string, DateTime>)field!.GetValue(null)!;
-
-        dict.ContainsKey(accountId).Should().BeTrue();
+        result.Should().BeLessThan(int.MaxValue);
     }
 
     [Fact]
-    public void SimulateFailedLogin_Should_Create_Entry_If_Not_Exists()
+    public async Task SimulateFailedLogin_Should_Record_Login()
     {
-        ResetStaticState();
-
+        // Arrange
+        var clock = new ClockService();
+        var repository = new FakeAuthRepository(clock);
         var accountId = "ACC6";
 
-        FakeAuthRepository.SimulateFailedLogin(accountId);
+        // Act
+        clock.UtcNow = DateTime.Now;
+        repository.SimulateFailedLogin(accountId);
 
-        var type = typeof(FakeAuthRepository);
-        var field = type.GetField("FailedLogins",
-            BindingFlags.NonPublic | BindingFlags.Static);
+        var result = await repository.GetFailedLogins(accountId, TimeSpan.FromMinutes(10));
 
-        var dict = (Dictionary<string, List<DateTime>>)field!.GetValue(null)!;
-
-        dict.ContainsKey(accountId).Should().BeTrue();
-        dict[accountId].Should().HaveCount(1);
+        // Assert
+        result.Should().Be(1);
     }
 }

@@ -1,3 +1,5 @@
+using CapitecFraud.Domain.Models;
+
 namespace CapitecFraud.Application.Models;
 
 public class FraudEvaluationContext
